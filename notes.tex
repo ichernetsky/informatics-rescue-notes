@@ -5,6 +5,39 @@
 \usepackage{indentfirst}
 \usepackage{booktabs}
 \usepackage{amsmath}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{caption}
+\usepackage{listings}
+
+\DeclareCaptionFont{white}{\color{white}}
+\DeclareCaptionFormat{listing}{\colorbox{Gray}{\parbox{\textwidth}{\hspace{15pt}#1#2#3}}}
+
+\captionsetup[lstlisting]{
+  format=listing,
+  labelfont=white,
+  textfont=white,
+  singlelinecheck=false,
+  margin=0pt,
+  font={bf,footnotesize}}
+
+\lstset{
+  language=C,
+  basicstyle=\footnotesize\ttfamily,
+  numberstyle=\tiny,
+  stepnumber=2,
+  numbersep=5pt,
+  tabsize=2,
+  extendedchars=true,
+  frame=b,
+  keywordstyle=\color{PineGreen},
+  commentstyle=\color{NavyBlue},
+  stringstyle=\color{Orange},
+  breaklines=true,
+  breakatwhitespace=false,
+  showspaces=false,
+  showtabs=false,
+  captionpos=t,
+}
 
 \title{Informatics Rescue}
 \author{Вадим Шендер, Иван Чернецкий}
