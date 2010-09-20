@@ -37,6 +37,28 @@
 
 \section{Двоичный поиск}
 \label{sec:binary-search}
+
+Алгоритм поиска элемента в отсортированном массиве. В худшем случае выполняется за $\log{n}$.
+
+\lstset{label=lst:iter-bin-seaerch,caption=Итеративный алгоритм бинарного поиска}
+\begin{lstlisting}
+int binary_search (int elem, int array[], size_t length) {
+  int mid, min = 0, max = length - 1;
+
+  do {
+    mid = min + ((max - min) / 2);
+    if (elem > array[mid])
+      min = mid + 1;
+    else
+      max = mid - 1;
+  } while ((min <= max) && array[mid] != elem);
+
+  if (array[mid] == elem)
+    return mid;
+  return -1;
+}
+\end{lstlisting}
+
 \section{Сортировка}
 \label{sec:sorting}
 \section{Расширяемые массивы}
