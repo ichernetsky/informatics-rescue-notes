@@ -11,7 +11,10 @@ all: $(PDFNAME)
 
 $(PDFNAME): $(TEXNAMES)
 	$(PDFLATEX) $(NAME)
+	while grep 'Label(s) may have changed' $(LOGNAME) > /dev/null 2>&1 ; do \
+		$(PDFLATEX) $(NAME) ; \
+        done
 
 .PHONY: clean
 clean:
-	$(RM) *.aux $(PDFNAME) $(LOGNAME)
+	$(RM) *.aux *.toc $(PDFNAME) $(LOGNAME)
