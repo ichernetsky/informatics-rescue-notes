@@ -103,6 +103,63 @@ int binary_search_aux (int elem, int array[], int low, int high) {
   \end{tabular}
 \end{center}
 
+Ниже приведено определение списка и реализация некоторых операций над ним.
+
+\lstset{label=lst:list-impl,caption=Некоторые операции}
+\begin{lstlisting}
+typedef struct list list;
+struct list {
+  int data;
+  list *next;
+};
+
+list *new_item (int data) {
+  list *new = (list *) malloc (sizeof (list));
+
+  new->data = data;
+  new->next = NULL;
+
+  return new;
+}
+
+list *add_front (list *head, list *new) {
+  new->next = head;
+  return new;
+}
+
+list *add_end (list *head, list *new) {
+  if (NULL == head)
+    return new;
+
+  list *p;
+  for (p = head; p->next != NULL; p = p->next)
+    ;
+  p->next = new;
+  return head;
+}
+
+void print_backwards (list *elem) {
+  if (NULL == elem)
+    return;
+
+  print_backwards (elem->next);
+  printf ("%x\n", elem->data);
+}
+\end{lstlisting}
+
+\lstset{label=lst:list-usage,caption=Пример использования}
+\begin{lstlisting}
+list *head = NULL;
+
+head = add_front (head, new_item (1));
+head = add_front (head, new_item (2));
+head = add_front (head, new_item (3));
+head = add_end (head, new_item (4));
+head = add_end (head, new_item (5));
+
+print_backwards (head);
+\end{lstlisting}
+
 \section{Деревья}
 \label{sec:trees}
 
