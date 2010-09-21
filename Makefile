@@ -17,4 +17,4 @@ $(PDFNAME): $(TEXNAMES)
 
 .PHONY: clean
 clean:
-	$(RM) *.aux *.toc $(PDFNAME) $(LOGNAME)
+	$(RM) *~ \#* *.aux *.toc $(PDFNAME) $(LOGNAME)
