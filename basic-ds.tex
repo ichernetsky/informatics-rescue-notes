@@ -160,8 +160,24 @@ head = add_end (head, new_item (5));
 print_backwards (head);
 \end{lstlisting}
 
-\section{Деревья}
+\section{Бинарные деревья поиска}
 \label{sec:trees}
+
+\textbf{Бинарное дерево} --- иерархическая структура данных. Каждый элемент содержит данные и указывает на $0..2$ других элементов. На каждый элемент, кроме \emph{корня}, указывает только один другой элемент. \emph{Листья} не указывают ни на один элемент.
+
+\begin{center}
+  \begin{tabular}{lcc}
+    \toprule
+    Операция & Стоимость & Вырожденный случай \\
+    \midrule
+    Поиск элемента & $\Theta(\log n)$ & $\Theta(n)$ \\
+    Затраты памяти & $\Theta(n)$ & \\
+    Вставка & $\Theta(\log n)$ & $\Theta(n)$ \\
+    Обход & $\Theta(n)$ & \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
 
 \section{Хэш-таблицы}
 \label{sec:hash-tables}
