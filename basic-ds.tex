@@ -165,6 +165,13 @@ print_backwards (head);
 
 \textbf{Бинарное дерево} --- иерархическая структура данных. Каждый элемент содержит данные и указывает на $0..2$ других элементов. На каждый элемент, кроме \emph{корня}, указывает только один другой элемент. \emph{Листья} не указывают ни на один элемент.
 
+\textbf{Бинарное дерево поиска} --- бинарное дерево, для каждого узла которого выполняются:
+\begin{enumerate}
+  \item Элементы левого поддерева ``меньше'' самого узла.
+  \item Элементы правого поддерева ``больше'' самого узла.
+  \item Оба поддерева -- бинарные деревья поиска.
+\end{enumerate}
+
 \begin{center}
   \begin{tabular}{lcc}
     \toprule
@@ -178,6 +185,68 @@ print_backwards (head);
   \end{tabular}
 \end{center}
 
+\lstset{label=lst:bst-impl,caption=Некоторые операции}
+\begin{lstlisting}
+typedef struct tree tree;
+struct tree {
+  int data;
+  tree *left;
+  tree *right;
+};
+
+tree *new_item (int data) {
+  tree *new = (tree *) malloc (sizeof (tree));
+
+  new->data = data;
+  new->left = NULL;
+  new->right = NULL;
+
+  return new;
+}
+
+tree *insert (tree *root, tree *new) {
+  if (NULL == root)
+    return new;
+
+  if (root->data < new->data)
+    root->right = insert (root->right, new);
+  else if (root->data > new->data)
+    root->left = insert (root->left, new);
+  /* skipping items that are already in the tree */
+
+  return root;
+}
+
+void apply_preorder (tree *root, void (*fn) (tree *)) {
+  if (NULL == root)
+    return;
+
+  (*fn) (root);
+  apply_preorder (root->left, fn);
+  apply_preorder (root->right, fn);
+}
+
+void print_tree (tree *root) {
+  apply_preorder (root, &print_tree_aux);
+}
+
+void print_tree_aux (tree *root) {
+  printf ("%d\n", root->data);
+}
+\end{lstlisting}
+
+\lstset{label=lst:bst-usage,caption=Пример использования}
+\begin{lstlisting}
+tree *root = NULL;
+
+root = insert (root, new_item (8));
+root = insert (root, new_item (3));
+root = insert (root, new_item (1));
+root = insert (root, new_item (6));
+root = insert (root, new_item (10));
+
+print_tree (root);
+\end{lstlisting}
 
 \section{Хэш-таблицы}
 \label{sec:hash-tables}
