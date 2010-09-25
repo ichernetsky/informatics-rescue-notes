@@ -248,8 +248,110 @@ root = insert (root, new_item (10));
 print_tree (root);
 \end{lstlisting}
 
-\section{Хэш-таблицы}
+\section{Хеш-таблицы}
 \label{sec:hash-tables}
+
+Используются для отображения \emph{ключей} на \emph{значения}, иными словами --- для реализации \emph{словарей}. Ключи получают из значений при помощи \emph{хеш-функций}. В идеальном случае хеш-функция отображает каждый ключ на единственное значение. В неидеальном случае случаются коллизии.
+
+\begin{center}
+  \begin{tabular}{lcc}
+    \toprule
+    Операция & Стоимость & Вырожденный случай \\
+    \midrule
+    Поиск элемента & $O(1)$ & $\Theta(n)$ \\
+    Затраты памяти & $\Theta(n)$ & \\
+    Вставка & $O(1)$ & \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\subsection{Построение хеш-функций}
+Значения качественной хеш-функции распределены (приблизительно) равномерно.
+
+\textbf{Метод деления}. Отображение ключа $k$ в одну из ячеек путем получения остатка от деления $k$ на $m$, т.е $h(k) = k \mod m$.
+
+\textbf{Метод умножения}. $h(k) = \lfloor m (kA \mod 1) \rfloor$, где $0 < A < 1$.
+
+\subsection{Разрешение коллизий}
+\textbf{Метод цепочек}. Каждая ячейка хеш-таблицы указывает на голову списка \emph{пар ключ-значение}. Значения, которые имеют одинаковые ключи, добавляются в один и то же список.
+
+\textbf{Открытая адресация}. Все элементы хранятся непосредственно в самой хеш-таблице. Множество ячеек для проверки \emph{вычисляется}, а не представляется в виде списка. Распространенные методы вычисления:
+\begin{itemize}
+  \item \textbf{Линейное исследование}. $h(k, i) = (h^{'}(k) + i) \mod m$, где $h^{'}$ --- вспомогательная хеш-функция, $i \in [0, m -1 ]$.
+  \item \textbf{Квадратичное исследование}. $h(k, i) = (h^{'}(k) + c_1i + c_2i^2) \mod m$, где $h^{'}$ --- вспомогательная хеш-функция, $i \in [0, m -1 ]$, $c_1$ и $c_2$ --- вспомогательные константы, отличные от $0$.
+  \item \textbf{Двойное хеширование}. $h(k, i) = (h_1(k) + ih_2(k)) \mod m$, где $h_1$ и $h_2$ --- вспомогательные хеш-функции, $i \in [0, m -1 ]$.
+\end{itemize}
+
+\subsection{Реализация}
+Хеш-таблица построена на основе обычного массива длины $m$. Разрешение коллизий по методу цепочек.
+
+\lstset{label=lst:htable-impl,caption=Некоторые операции}
+\begin{lstlisting}
+#define HTABLE_SIZE 20
+#define MULTIPLIER  31
+
+typedef struct item item;
+struct item {
+  char *name;
+  int value;
+  item *next;
+};
+
+item *htable[HTABLE_SIZE];
+
+item *new_item (char *name, int value) {
+  item *new = (item *) malloc (sizeof (item));
+
+  new->name = name;
+  new->value = value;
+  new->next = NULL;
+
+  return new;
+}
+
+item *lookup (char *name, int create, int value) {
+  int h = hash (name);
+  item *i = htable[h];
+
+  for (; i != NULL; i = i->next)
+    if (strcmp (name, i->name) == 0)
+      return i;
+
+  if (create) {
+    i = new_item (name, value);
+    i->next = htable[h];
+    htable[h] = i;
+  }
+  return i;
+}
+
+unsigned int hash (char *str) {
+  unsigned int h = 0;
+  unsigned char *p = (unsigned char *) str;
+
+  for (; *p != '\0'; p++)
+    h = MULTIPLIER * h + *p;
+  return h % HTABLE_SIZE;
+}
+\end{lstlisting}
+
+\lstset{label=lst:htable-usage,caption=Пример использования}
+\begin{lstlisting}
+char *strings[] = { "string1", "string2", "string3",
+                    "string4", "string5" };
+int i;
+item *it;
+
+for (i = 0; i < 3; i++)
+  lookup (strings[i], 1, i + 1);
+for (i = 0; i < 5; i++) {
+  it = lookup (strings[i], 0, 0);
+  if (it)
+    printf ("%s in hash table, value = %d\n", it->name, it->value);
+  else
+    printf ("%s somewhere else\n", strings[i]);
+}
+\end{lstlisting}
 
 \section{Динамическое программирование}
 \label{sec:dyn-programming}
