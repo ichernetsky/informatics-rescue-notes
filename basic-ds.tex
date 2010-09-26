@@ -316,6 +316,28 @@ root = insert (root, new_item (10));
 print_tree (root);
 \end{lstlisting}
 
+\section{Бинарные пирамиды}
+\label{sec:bin-heaps}
+
+Бинарное дерево, для которого выполнены следующие условия:
+\begin{itemize}
+  \item Значение в узле больше значений его потомков.
+  \item Любой лист находится на высоте либо $d - 1$, либо $d$.
+  \item Низший уровень заполняется слева направо.
+\end{itemize}
+
+\begin{center}
+  \begin{tabular}{lc}
+    \toprule
+    Операция & Стоимость \\
+    \midrule
+    Поиск max элемента & $\Theta(1)$ \\
+    Удаление max элемента & $\Theta(\log n)$ \\
+    Вставка & $\Theta(\log n)$ \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
 \section{Хеш-таблицы}
 \label{sec:hash-tables}
 
