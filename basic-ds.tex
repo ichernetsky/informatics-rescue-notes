@@ -87,6 +87,72 @@ int binary_search_aux (int elem, int array[], int low, int high) {
 \section{Расширяемые массивы}
 \label{sec:ext-arrays}
 
+Массив, который расширяется по мере необходимости.
+\begin{center}
+  \begin{tabular}{lc}
+    \toprule
+    Операция & Стоимость \\
+    \midrule
+    Доступ к $n$-ому элементу & $\Theta(1)$ \\
+    Затраты памяти & $\Theta(n)$ \\
+    Вставка в конец & $\Theta(1)$ \\
+    Вставка в произвольное место & $\Theta(n)$ \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\subsection{Реализация}
+\lstset{label=lst:dynarray-impl,caption=Некоторые операции}
+\begin{lstlisting}
+typedef struct extarray extarray;
+struct extarray {
+  int count;
+  int max;
+  int *array;
+};
+
+extarray arr;
+
+enum { EXTARRAY_INIT = 1,
+       EXTARRAY_GROW = 2 };
+
+int add (int value) {
+  if (NULL == arr.array) {
+    arr.array = (int *) malloc (EXTARRAY_INIT * sizeof (int));
+    if (NULL == arr.array)
+      return -1;
+    arr.max = EXTARRAY_INIT;
+    arr.count = 0;
+  } else if (arr.count >= arr.max) {
+    int i;
+
+    int *newarr = (int *) malloc ((EXTARRAY_GROW * arr.max) * sizeof (int));
+    if (NULL == newarr)
+      return -1;
+    memcpy (newarr, arr.array, arr.count * sizeof (int));
+    free (arr.array);
+    arr.max *= EXTARRAY_GROW;
+    arr.array = newarr;
+  }
+  arr.array[arr.count] = value;
+  return arr.count++;
+}
+\end{lstlisting}
+
+\lstset{label=lst:dynarray-usage,caption=Пример использования}
+\begin{lstlisting}
+int i;
+
+(void) add (5);
+(void) add (3);
+(void) add (2);
+(void) add (7);
+(void) add (6);
+
+for (i = 0; i < arr.count; i++)
+  printf ("%d ", arr.array[i]);
+\end{lstlisting}
+
 \section{Списки}
 \label{sec:lists}
 
