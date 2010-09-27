@@ -3,4 +3,5 @@ bsearch
 extarray
 hash
 list
+qsort
 tree
