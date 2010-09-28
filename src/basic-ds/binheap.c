@@ -9,23 +9,31 @@ struct binheap {
   int size;
 };
 
-binheap heap = { { 1, 2, 3, 4, 5, 6, 7, 8, 9 },
-		 9 };
-
 inline int topos (int);
 inline int toindex (int);
 inline int parent (int);
 inline int left (int);
 inline int right (int);
+void swap (int [], int, int);
 void max_heapify (binheap *, int);
 void build_max_heap (binheap *);
+void heapsort (binheap *);
 
 int main (void) {
+  binheap heap = { { 9, 1, 8, 2, 7, 3, 6, 4, 5 },
+		   9 };
   int i;
-  build_max_heap (&heap);
 
+  build_max_heap (&heap);
   for (i = 0; i < heap.size; i++)
     printf ("%d ", heap.data[i]);
+
+  printf ("\n");
+
+  heapsort (&heap);
+  for (i = 0; i < heap.size; i++)
+    printf ("%d ", heap.data[i]);
+
   return EXIT_SUCCESS;
 }
 
@@ -49,6 +57,14 @@ inline int right (int i) {
   return toindex (2 * topos (i) + 1);
 }
 
+void swap (int a[], int i, int j) {
+  int tmp;
+
+  tmp = a[i];
+  a[i] = a[j];
+  a[j] = tmp;
+}
+
 void max_heapify (binheap *heap, int i) {
   int l = left (i);
   int r = right (i);
@@ -61,10 +77,7 @@ void max_heapify (binheap *heap, int i) {
     largest = r;
 
   if (largest != i) {
-    tmp = heap->data[i];
-    heap->data[i] = heap->data[largest];
-    heap->data[largest] = tmp;
-
+    swap (heap->data, i, largest);
     max_heapify (heap, largest);
   }
 }
@@ -75,4 +88,17 @@ void build_max_heap (binheap *heap) {
     return;
   for (i = toindex (heap->size / 2); i >= 0; i--)
     max_heapify (heap, i);
+}
+
+void heapsort (binheap *heap) {
+  int i;
+  int size = heap->size;
+
+  build_max_heap (heap);
+  for (i = size - 1; i > 0; i--) {
+    swap (heap->data, 0, i);
+    heap->size -= 1;
+    max_heapify (heap, 0);
+  }
+  heap->size = size;
 }
