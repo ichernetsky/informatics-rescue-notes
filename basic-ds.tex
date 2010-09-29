@@ -514,11 +514,72 @@ void build_max_heap (binheap *heap) {
 
 \lstset{label=lst:binheap-usage,caption=Пример использования}
 \begin{lstlisting}
-binheap heap = { { 9, 1, 8, 2, 7, 3, 6, 4, 5 },
+binheap heap = { { 9, 1, 11, 13, 7, 3, 15, 17, 5 },
                    9 };
 int i;
 
 build_max_heap (&heap);
+for (i = 0; i < heap.size; i++)
+  printf ("%d ", heap.data[i]);
+\end{lstlisting}
+
+\section{Очереди с приоритетом}
+\label{sec:priority-queues}
+
+Структура данных, поддерживающая следующие операции:
+\begin{itemize}
+  \item $Insert(S, x)$ --- вставляет элемент $x$ в множество $S$;
+  \item $Maximum(S)$ --- возвращает элемент с наибольшим ключом;
+  \item $ExtractMax(S)$ --- возвращает элемент с наибольшим ключом, удаляя его из $S$;
+  \item $IncreaseKey(S, x, k)$ --- заменяет ключ элемента $x$ ключом $k$, который не меньше текущего.
+\end{itemize}
+
+В следующей реализации ключ и данные представлены одним и тем же полем структуры для простоты.
+
+\lstset{label=lst:pqueue-impl,caption=Некоторые операции}
+\begin{lstlisting}
+int heap_maximum (binheap *heap) {
+  return heap->data[0];
+}
+
+int heap_extract_max (binheap *heap) {
+  int max = heap->data[0];
+
+  heap->size -= 1;
+  heap->data[0] = heap->data[heap->size];
+  max_heapify (heap, 0);
+  return max;
+}
+
+int heap_increase_key (binheap *heap, int i, int k) {
+  if (k < heap->data[i])
+    return -1;
+  heap->data[i] = k;
+  while (i > 0 && heap->data[parent (i)] < heap->data[i]) {
+    swap (heap->data, i, parent (i));
+    i = parent (i);
+  }
+  return 0;
+}
+
+void heap_insert (binheap *heap, int k) {
+  heap->data[heap->size] = INT_MIN;
+  heap->size += 1;
+  heap_increase_key (heap, heap->size - 1, k);
+}
+\end{lstlisting}
+
+\lstset{label=lst:pqueue-usage,caption=Пример использования}
+\begin{lstlisting}
+binheap heap = { { 9, 1, 11, 13, 7, 3, 15, 17, 5 },
+                   9 };
+int i;
+
+build_max_heap (&heap);
+heap_insert (&heap, 8);
+heap_insert (&heap, 19);
+(void) heap_extract_max (&heap);
+(void) heap_increase_key (&heap, 6, 12);
 for (i = 0; i < heap.size; i++)
   printf ("%d ", heap.data[i]);
 \end{lstlisting}
