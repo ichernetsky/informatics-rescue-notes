@@ -1,10 +1,16 @@
+CP = cp
 PDFLATEX = pdflatex
 RM = rm -f
 
 NAME = notes
 TEXNAMES = $(wildcard *.tex)
 PDFNAME = $(NAME).pdf
+RELPDFNAME = $(NAME)-$(shell date +%Y%m%d).pdf
 LOGNAME = $(NAME).log
+
+.PHONY: release
+release: clean all
+	$(CP) $(PDFNAME) $(RELPDFNAME)
 
 .PHONY: all
 all: $(PDFNAME)
@@ -17,4 +23,4 @@ $(PDFNAME): $(TEXNAMES)
 
 .PHONY: clean
 clean:
-	$(RM) *~ \#* *.aux *.toc $(PDFNAME) $(LOGNAME)
+	$(RM) *~ \#* *.aux *.toc $(NAME)*.pdf $(LOGNAME) missfont.log
