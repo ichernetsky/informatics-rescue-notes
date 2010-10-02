@@ -8,12 +8,12 @@ PDFNAME = $(NAME).pdf
 RELPDFNAME = $(NAME)-$(shell date +%Y%m%d).pdf
 LOGNAME = $(NAME).log
 
+.PHONY: all
+all: $(PDFNAME)
+
 .PHONY: release
 release: clean all
 	$(CP) $(PDFNAME) $(RELPDFNAME)
-
-.PHONY: all
-all: $(PDFNAME)
 
 $(PDFNAME): $(TEXNAMES)
 	$(PDFLATEX) $(NAME)
