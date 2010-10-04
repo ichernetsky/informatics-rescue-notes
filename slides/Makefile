@@ -2,7 +2,7 @@ CD = cd
 PDFLATEX = pdflatex
 RM = rm -f
 
-SLIDES =
+SLIDES = network
 SOURCES = $(addsuffix /slides.tex,$(SLIDES))
 PDFS = $(addsuffix /slides.pdf,$(SLIDES))
 
