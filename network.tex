@@ -23,6 +23,27 @@ TCP обеспечивает \emph{управление потоком} (\emph{f
   \item Клиент подтверждает получение SYN сервера.
 \end{enumerate}
 
+\begin{center}
+  \begin{tikzpicture}
+    \tikzstyle{tcpStep} = [];
+    \node at (0,0) (client) {Клиент};
+    \node at (4,0) (server) {Сервер};
+
+    \draw[thick,->,-stealth] (client.south)  -- +(0,-4)
+      node (client socket) [tcpStep,left,pos=.1] {\lstinline{socket}}
+      node (connect) [tcpStep,left,pos=.35,text width=3.3cm, text justified] {\lstinline{connect}, блокировка, активное открытие}
+      node (close connect) [tcpStep,left,pos=.75] {Завершение \lstinline{connect}};
+    \draw[thick,->,-stealth] (server.south)  -- +(0,-4)
+      node (server socket) [tcpStep,right,pos=.2] {\lstinline{socket, bind, listen}}
+      node (accept) [tcpStep,,right,pos=.5] {\lstinline{accept}, блокировка}
+      node (close accept) [tcpStep,right,pos=.85] {Завершение \lstinline{accept}};
+
+    \draw[thick,->,-stealth] (connect) edge node [above,sloped] {SYN J} (accept);
+    \draw[thick,->,-stealth] (accept) edge node [above,sloped] {SYN K, ACK J+1} (close connect);
+    \draw[thick,->,-stealth] (close connect) edge node [above,sloped] {ACK K+1} (close accept);
+  \end{tikzpicture}
+\end{center}
+
 Для подобного обмена нужно как минимум три пакета, поэтому он называется \emph{трехэтапным рукопожатием TCP} (\emph{TCP three-way handshake}).
 
 \subsection{Параметры TCP}
