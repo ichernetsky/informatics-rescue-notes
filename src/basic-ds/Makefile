@@ -15,7 +15,7 @@ all: .gitignore
 		echo $$d >> $@; \
 	done
 
-%: %.o
+%: %.c
 	$(CC) $(CFLAGS) $< -o $@
 
 .PHONY: clean
