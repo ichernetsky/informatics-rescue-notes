@@ -231,6 +231,31 @@ TCP обеспечивает \emph{управление потоком} (\emph{f
 
 UDP не обеспечивает управления потоком. Быстрый отправитель UDP может передавать дейтаграммы с такой скоростью, с которой не может работать получатель UDP.
 
+\section{POSIX API}
+\label{sec:network-api}
+
+Ниже приведен простейший DAYTIME клиент. В качестве аргументов командной строки должен быть указан IPv4-адрес и может быть указан номер порта.
+
+\lstset{label=lst:date-client-basic,caption=Простейший DAYTIME клиент}
+\lstinputlisting{src/network/date-client-basic.c}
+
+Ниже приведен пример запуска клиента для сервера \texttt{time.ien.it}.
+
+\lstset{language=,label=lst:basic-client-run,caption=Использование}
+\begin{lstlisting}
+% nslookup time.ien.it
+Server:		10.6.0.6
+Address:	10.6.0.6#53
+
+Non-authoritative answer:
+time.ien.it	canonical name = ntp.ien.it.
+Name:	ntp.ien.it
+Address: 193.204.114.105
+
+% date-client-basic 193.204.114.105
+20 OCT 2010 12:04:33 CEST
+\end{lstlisting}
+
 \section{Организация сетей и адресация}
 \label{sec:network-setup}
 
