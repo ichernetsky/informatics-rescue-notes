@@ -1,7 +1,7 @@
 RM = rm -f
 TOUCH = touch
 
-PROGRAMS = client-seq
+PROGRAMS = date-client-basic
 
 .PHONY: all
 all: $(PROGRAMS)

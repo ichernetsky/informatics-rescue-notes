@@ -1,3 +1,6 @@
+#ifndef _NETAUX_H
+#define _NETAUX_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,3 +10,7 @@
 #include <netdb.h>
 
 #define MAX_LINE 1460
+
+void err_quit (const char *where);
+
+#endif /* _NETAUX_H */

@@ -1,5 +1,10 @@
 #include "netaux.h"
 
+void err_quit (const char *where) {
+  perror (where);
+  exit (EXIT_FAILURE);
+}
+
 int write_line (int fd, const char *line, size_t length) {
   size_t sent = 0;
   size_t left = length;
