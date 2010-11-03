@@ -31,5 +31,5 @@ slides:
 
 .PHONY: clean
 clean:
-	$(RM) *~ \#* *.aux *.toc $(NAME)*.pdf *.log
+	$(RM) *~ \#* *.aux *.toc $(NAME)*.pdf *.log *.out
 	$(CD) slides && $(MAKE) clean
