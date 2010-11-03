@@ -336,6 +336,25 @@ int connect(int sockfd, const struct sockaddr *servaddr, socklen_t addrlen);
   \item Если сегмент SYN клиента приводит к получению сообщения ICMP о недоступности получателя от какого-либо промежуточного маршрутизатора. Ядро сохраняет сообщение об ошибке, но продолжает отправлять сегменты SYN с определенными интервалами. Если же по истечении определенного фиксированного времени ответ не получен, то сохраненная ошибка ICMP возвращается процессу либо как \lstinline{EHOSTUNREACH}, либо как \lstinline{ENETUNREACH}.
 \end{enumerate}
 
+\subsubsection{Функции inet\_pton и inet\_ntop}
+Преобразуют IP-адрес, заданный как строка, в двоичный формат представления с сетевым порядком байт, и наоборот. Симфолы p и n обозначают соответсвенно формат \emph{представления} и \emph{численный} формат.
+\lstset{language=C,caption=}
+\begin{lstlisting}
+#include <arpa/inet.h>
+int inet_pton(int family, const char *str, void *addr);
+
+#include <arpa/inet.h>
+const char *inet_ntop(int family, const void *addr, char *str,
+                      socklen_t len);
+\end{lstlisting}
+
+Значение аргумента \lstinline{family} может быть либо \lstinline{AF_INET}, либо \lstinline{AF_INET6}. Если \lstinline{family} не поддерживается, функции возвращают ошибку со значением переменной \lstinline{errno}, равным \lstinline{EAFNOSUPPORT}. В качестве \lstinline{len} рекомендуется использовать макросы, определенные в \lstinline{<netinet/in.h>}:
+\lstset{language=C,caption=}
+\begin{lstlisting}
+#define  INET_ADDRSTRLEN    16
+#define  INET6_ADDRSTRLEN   46
+\end{lstlisting}
+
 \section{Организация сетей и адресация}
 \label{sec:network-setup}
 
