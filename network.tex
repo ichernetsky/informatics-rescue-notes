@@ -355,6 +355,19 @@ const char *inet_ntop(int family, const void *addr, char *str,
 #define  INET6_ADDRSTRLEN   46
 \end{lstlisting}
 
+\subsection{DAYTIME клиент, независящий от протокола}
+В качестве адреса могут быть указаны IPv4-адрес, IPv6-адрес или же доменное имя.
+
+\lstset{label=lst:date-client,caption=DAYTIME клиент}
+\lstinputlisting{src/network/date-client.c}
+
+Ниже приведен пример запуска клиента для сервера \texttt{time.ien.it}.
+\lstset{language=,label=lst:client-run,caption=Использование}
+\begin{lstlisting}
+% date-client time.ien.it
+20 OCT 2010 12:04:33 CEST
+\end{lstlisting}
+
 \section{Организация сетей и адресация}
 \label{sec:network-setup}
 
