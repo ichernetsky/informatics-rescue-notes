@@ -410,6 +410,12 @@ struct addrinfo {
   \item \lstinline{AI_CANONNAME} указывает функции на необходимость возвратить каноническое имя узла;
 \end{itemize}
 
+\subsection{Последовательный DAYTIME сервер}
+В качестве аргументов командной строки может быть указан номер порта для прослушивания.
+
+\lstset{label=lst:date-server,caption=DAYTIME сервер}
+\lstinputlisting{src/network/date-server.c}
+
 \section{Организация сетей и адресация}
 \label{sec:network-setup}
 

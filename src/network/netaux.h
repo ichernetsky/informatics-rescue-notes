@@ -10,6 +10,7 @@
 #include <netdb.h>
 
 #define MAX_LINE 1460
+#define BACKLOG  0
 
 void err_quit (const char *where);
 
