@@ -368,6 +368,48 @@ const char *inet_ntop(int family, const void *addr, char *str,
 20 OCT 2010 12:04:33 CEST
 \end{lstlisting}
 
+\subsubsection{Функция getaddrinfo}
+Осущетсвляет трансляцию имен в адреса и служб в порты. Возвращает список структур \lstinline{sockaddr}. Функция \lstinline{getaddrinfo} скрывает все различия между протоколами в библиотеке функций.
+
+\lstset{language=C,caption=}
+\begin{lstlisting}
+#include <netdb.h>
+int getaddrinfo(const char *node, const char *service,
+                const struct addrinfo *hints,
+                struct addrinfo **res);
+\end{lstlisting}
+
+Через указатель \lstinline{res} функция возвращает указатель на связный список структур \lstinline{addrinfo}.
+\lstset{language=C,caption=}
+\begin{lstlisting}
+struct addrinfo {
+  int              ai_flags;      /* AI_PASSIVE, AI_CANONNAME */
+  int              ai_family;     /* AF_xxx */
+  int              ai_socktype;   /* SOCK_xxx */
+  int              ai_protocol;   /* 0 or IPPROTO_xxx for IPv4 or IPv6 */
+  size_t           ai_addrlen;    /* ai_addr length */
+  struct sockaddr *ai_addr;       /* pointer to canonical name */
+  char            *ai_canonname;  /* pointer to socket address structure */
+  struct addrinfo *ai_next;       /* pointer to next structure in list */
+};
+\end{lstlisting}
+
+Переменная \lstinline{node} --- это либо имя узла, либо строка адреса (точечно-десятичная запись для IPv4 или шестнадцатеричная строка для IPv6). Переменная \lstinline{service} --- это либо имя службы, либо строка, содержащая десятичный номер порта.
+
+Аргумент \lstinline{hints} --- это либо пустой указатель, либо указатель на структуру \lstinline{addrinfo}, заполненную рекомендациями вызывающего процесса о типах информации, которую он хочет получить.
+\begin{itemize}
+  \item \lstinline{ai_flags} (несколько констант \lstinline{AI_xxx}, объединенных операцией ИЛИ);
+  \item \lstinline{ai_family} (значение \lstinline{AF_xxx});
+  \item \lstinline{ai_socktype} (значение \lstinline{SOCK_xxx});
+  \item \lstinline{ai_protocol}.
+\end{itemize}
+
+Наиболее важные возможные значения поля \lstinline{ai_flags}:
+\begin{itemize}
+  \item \lstinline{AI_PASSIVE} указывает, что сокет будет использоваться для пассивного открытия;
+  \item \lstinline{AI_CANONNAME} указывает функции на необходимость возвратить каноническое имя узла;
+\end{itemize}
+
 \section{Организация сетей и адресация}
 \label{sec:network-setup}
 
