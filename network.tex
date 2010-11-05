@@ -416,6 +416,27 @@ struct addrinfo {
 \lstset{label=lst:date-server,caption=DAYTIME сервер}
 \lstinputlisting{src/network/date-server.c}
 
+\subsubsection{Функция bind}
+Функция \lstinline{bind} связывает сокет с локальным адресом протокола, комбинацией адреса IP с номером порта.
+\lstset{language=C,caption=}
+\begin{lstlisting}
+#include <sys/socket.h>
+int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+\end{lstlisting}
+
+Вторым аргументом является указатель на специфичный для протокола адрес, а третий аргумент --- это размер структуры адреса.
+
+С помощью функции \lstinline{bind} процесс может связать конкретный IP-адрес с сокетом. IP-адрес должен соответствовать одному из интерфейсов узла. Так определяется IP-адрес, который будет использоваться для отправляемых через сокет IP-дейтаграмм. При этом на сокет накладывается ограничение: он может принимать только такие входящие соединения, которые предназначены именно для этого IP-адреса.
+
+Если зададать нулевой номер порта, то при вызове функции \lstinline{bind} ядро выберет динамически назначаемый порт. Но если задать IP-адрес с помощью символов подстановки, ядро не выберет локальный IP-адрес, пока к сокету не присоединиться клиент либо на сокет не будет отправлена дейтаграмма.
+
+В случае IPv4 универсальный адрес состоящий из символов подстановки, задается константой \lstinline{INADDR_ANY}.
+\lstset{language=C,caption=}
+\begin{lstlisting}
+struct sockaddr_in addr;
+servaddr.sin_addr.s_addr = htonl (INADDR_ANY);
+\end{lstlisting}
+
 \section{Организация сетей и адресация}
 \label{sec:network-setup}
 
