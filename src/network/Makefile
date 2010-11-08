@@ -16,7 +16,7 @@ all: .gitignore
 		echo $$d >> $@; \
 	done
 
-%: %.c netaux.c
+%: %.c netaux.c netaux.h
 	$(CC) $(CFLAGS) netaux.c $< -o $@
 
 .PHONY: clean
