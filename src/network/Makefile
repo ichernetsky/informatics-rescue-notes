@@ -3,7 +3,8 @@ TOUCH = touch
 
 PROGRAMS = date-client-basic \
 	   date-client \
-	   date-server
+	   date-server \
+	   http-server-fork
 
 .PHONY: all
 all: $(PROGRAMS)
