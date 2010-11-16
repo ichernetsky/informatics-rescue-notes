@@ -737,3 +737,103 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 Алгоритм Нейгла может плохо взаимодейстовать с другой возможностью TCP --- отложенным подтверждением. Когда прибывает сегмент от удаленного узла, TCP задерживает отправку ACK в предположении, что приложение скоро ответит на только что полученные данные. Поэтому ACK можно будет объединить с данными.
 
 Если через $T_P$ обозначить время, необходимое серверу для обработки запроса и отправки ответа, но на каждую пару запрос/ответ уйдет $RTT + T_P$ мс. Если клиент посылает свой запрос в виде двух последовательных операций записи, то алгоритмы взаимодействуют так, что число сегментов, необходимых для получения ответа от сервера, равно четырем. Поэтому время, необходимое для получения логического ответа, может быть значительным.
+
+\subsection{Номера портов}
+IANA (Internet Assigned Numbers Authority --- агенство по выделению имен и уникальных параметров протоколов Интернета) ведет список назначенных номеров портов.
+\begin{enumerate}
+  \item \emph{Заранее известные порты}: от 0 до 1023. Эти номера управляются и присваиваются IANA.
+  \item \emph{Зарегистрированные порты}: от 1024 до 49151. Они не управляются IANA, но IANA регистрирует и составляет списки использования этих портов.
+  \item \emph{Динамические}, или \emph{частные} порты: от 49152 до 65535.
+\end{enumerate}
+
+\section{Приложения для отладки}
+\subsubsection{ps}
+Отображают информацию о выбранных активных процессах. Ниже перечислены некоторые ключи, представлющие особенный интерес по теме:
+\begin{itemize}
+  \item \textbf{wchan} --- имя функции ядра, в которой процесс блокирован. ``-'', если процесс выполняется. ``*'', если в процессе несколько потоков, а ps не выводит информацию о потоках.
+\end{itemize}
+
+\subsubsection{ping}
+Утилита ping посылает ICMP пакеты ECHO\_REQUEST на указанный узел и использует полученные (или неполученные) в ответ ICMP пакеты ECHO\_RESPONSE для определения доступности этого узла и затраченного времени.
+\lstset{language=,caption=}
+\begin{lstlisting}
+% ping -c 3 informatics.by
+PING informatics.by (91.149.157.152) 56(84) bytes of data.
+64 bytes from vh24.hoster.by (91.149.157.152): icmp_req=1 ttl=59 time=403 ms
+64 bytes from vh24.hoster.by (91.149.157.152): icmp_req=2 ttl=59 time=399 ms
+64 bytes from vh24.hoster.by (91.149.157.152): icmp_req=3 ttl=59 time=267 ms
+
+--- informatics.by ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 1999ms
+rtt min/avg/max/mdev = 267.651/356.916/403.512/63.140 ms
+\end{lstlisting}
+
+\subsubsection{traceroute}
+Утилита traceroute позволяет выяснить маршрут следования пакетов к узлу назначения. Для этого она посылает серию UDP пакетов c TTL от 1 до 30 (эти параметры можно менять) и получает ответы от промежуточных маршрутизаторов об истечении TTL (ICMP TIME\_EXCEEDED).
+\lstset{language=,caption=}
+\begin{lstlisting}
+% traceroute informatics.by
+traceroute to informatics.by (91.149.157.152), 30 hops max, 60 byte packets
+ 1  10.10.224.1 (10.10.224.1)  459.626 ms  679.630 ms  683.505 ms
+ 2  * * *
+ 3  77.74.33.114 (77.74.33.114)  687.141 ms  1246.943 ms  1250.856 ms
+ 4  as6697-2.by-ix.net (195.137.180.253)  1254.780 ms  1282.746 ms  1287.441 ms
+ 5  gi15-0-0.ne1-1-2.net.belpak.by (93.84.125.9)  1287.400 ms  1290.625 ms  1294.567 ms
+ 6  gw2.datacenter.beltelecom.by (93.84.125.165)  1294.530 ms  255.403 ms  327.064 ms
+ 7  vh24.hoster.by (91.149.157.152)  334.976 ms  386.862 ms  762.791 ms
+\end{lstlisting}
+
+\subsubsection{route}
+Выводит или изменяет таблицу маршрутизации IP-пакетов.
+\lstset{language=,caption=}
+\begin{lstlisting}
+% route add -net 192.56.76.0 netmask 255.255.255.0 dev eth0
+\end{lstlisting}
+
+\subsubsection{netstat}
+Может напечатать список откртых сокетов, таблицу маршрутизации, таблицу сетевых интерфейсов, статистику по каждому протоколу и т.д.
+\lstset{language=,caption=}
+\begin{lstlisting}
+% netstat -nr
+Kernel IP routing table
+Destination   Gateway    Genmask         Flags   MSS Window  irtt Iface
+10.6.6.6      0.0.0.0    255.255.255.255 UH        0 0          0 ppp0
+169.254.0.0   0.0.0.0    255.255.0.0     U         0 0          0 ppp0
+0.0.0.0       10.6.6.6   0.0.0.0         UG        0 0          0 ppp0
+\end{lstlisting}
+
+\subsubsection{ifconfig}
+Команда ifconfig используется для конфигурирования сетевых интерфейсов ядра.
+
+Если аргументы не переданы, ifconfig выдает информацию о состоянии активных интерфейсов. Если указан один аргумент интерфейс, выдается информация только о состоянии этого интерфейса; если указан один аргумент -a, выдается информация о состоянии всех интерфейсов, даже отключенных. Иначе команда конфигурирует указанный интерфейс.
+
+\subsubsection{netcat}
+Позволяет устанавливать соединения TCP и UDP, принимать данные и передавать их, сканировать порты. Аналог широкоизвестной утилиты cat для сетевого вводы/вывода.
+
+\subsubsection{tcpdump}
+Позволяет перехватывать и анализировать сетевой трафик. Для выполнения требует прав суперпользователя и прямой доступ к устройтсву.
+
+\lstset{language=,caption=Типичный вывод tcpdump}
+\begin{lstlisting}
+% sudo tcpdump -i lo
+tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+listening on lo, link-type EN10MB (Ethernet), capture size 65535 bytes
+22:02:04.021905 IP localhost.localdomain.43849 > localhost.localdomain.6600: Flags [P.], seq 2463307991:2463307998, ack 2463842528, win 770, options [nop,nop,TS val 12929880 ecr 12929629], length 7
+22:02:04.022845 IP localhost.localdomain.6600 > localhost.localdomain.43849: Flags [P.], seq 1:156, ack 7, win 512, options [nop,nop,TS val 12929880 ecr 12929880], length 155
+22:02:04.022878 IP localhost.localdomain.43849 > localhost.localdomain.6600: Flags [.], ack 156, win 770, options [nop,nop,TS val 12929880 ecr 12929880], length 0
+^C
+3 packets captured
+6 packets received by filter
+0 packets dropped by kernel
+\end{lstlisting}
+
+\subsubsection{tcpreplay}
+Позволяет перепосылает все пакеты из файла, полученного утилитой tcpdump. Скорость можно устанавливать.
+
+\subsubsection{iperf}
+Генератор TCP и UDP трафика для тестирования пропускной способности сети. Работает как по TCP, так и по UDP. Для работы должен быть запущен сервер на одном узле, и клиент на другом.
+
+\subsubsection{sysctl}
+Предназначена для управления отдельными параметрами ядра, безопасности, сетевой подсистемы. Позволяет определять и задавать такие параметры как размер сегмента разделяемой памяти, ограничение на число запущенных процессов.
+
+Имеет конфигурационный файл \texttt{/etc/sysctl.conf}, в котором переопределяются необходимые параметры.
