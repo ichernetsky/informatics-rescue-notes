@@ -72,6 +72,30 @@ TCP обеспечивает \emph{управление потоком} (\emph{f
 
 \subsection{Диаграмма состояний TCP}
 Смотрите рис.~\ref{fig:tcp-states} на стр.~\pageref{fig:tcp-states}.
+
+\begin{table}[h!]
+  \caption{Состояния}
+  \begin{center}
+    \begin{tabular}{p{3.5cm}p{9cm}}
+      \toprule
+      \textbf{Состояние} & \textbf{Описание} \\
+      \midrule
+      CLOSED         & Закрыт. Сокет не используется \\
+      LISTEN         & Ожидает входящих соединений \\
+      SYN\_SENT      & Активно пытается установить соединение \\
+      SYN\_RECEIVED  & Идет начальная синхронизация соединения \\
+      ESTABLISHED    & Соединение установлено \\
+      CLOSE\_WAIT    & Удаленная сторона отключилась; ожидание закрытия сокета \\
+      FIN\_WAIT\_1   & Сокет закрыт; отключение соединения \\
+      CLOSING        & Сокет закрыт, затем удаленная сторона отключилась; ожидание подтверждения \\
+      LAST\_ACK      & Удаленная сторона отключилась, затем сокет закрыт; ожидание подтверждения \\
+      FIN\_WAIT\_2   & Сокет закрыт; ожидание отключения удаленной стороны \\
+      TIME\_WAIT     & Сокет закрыт, но ожидает пакеты, еще находящиеся в сети для обработки \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+\end{table}
+
 % взята с http://www.texample.net/tikz/examples/tcp-state-machine/
 \noindent
 \begin{figure}[t!]
