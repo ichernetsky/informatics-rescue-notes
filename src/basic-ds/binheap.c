@@ -81,7 +81,6 @@ void max_heapify (binheap *heap, int i) {
   int l = left (i);
   int r = right (i);
   int largest = i;
-  int tmp;
 
   if (l < heap->size && heap->data[l] > heap->data[i])
     largest = l;

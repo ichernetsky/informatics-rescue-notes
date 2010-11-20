@@ -27,7 +27,7 @@ int set_signal_handler (int signo, sig_func func) {
   return sigaction (signo, &act, &old_act);
 }
 
-void sig_wait_child (int signo) {
+void sig_wait_child (int signo __attribute__ ((unused))) {
   pid_t pid;
   int stat;
   while ((pid = waitpid (-1, &stat, WNOHANG)) > 0)

@@ -1,7 +1,8 @@
 #include "netaux.h"
 
-int main (int argc, char *argv[]) {
-  int listenfd, peer, len;
+int main (void) {
+  int listenfd, peer;
+  socklen_t len;
   struct sockaddr_in servaddr, peeraddr;
   int on = 1;
   pid_t child;

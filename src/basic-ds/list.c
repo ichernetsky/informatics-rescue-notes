@@ -50,10 +50,11 @@ list *add_front (list *head, list *new) {
 }
 
 list *add_end (list *head, list *new) {
+  list *p;
+
   if (NULL == head)
     return new;
 
-  list *p;
   for (p = head; p->next != NULL; p = p->next)
     ;
   p->next = new;

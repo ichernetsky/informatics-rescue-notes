@@ -1,6 +1,8 @@
 RM = rm -f
 TOUCH = touch
 
+CFLAGS = -pedantic -Wall -Wextra
+
 SOURCES = $(wildcard *.c)
 PROGRAMS = $(basename $(SOURCES))
 

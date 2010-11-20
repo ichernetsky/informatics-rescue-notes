@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define HTABLE_SIZE 20
 #define MULTIPLIER  31

@@ -2,7 +2,8 @@
 #include "netaux.h"
 
 int main (int argc, char *argv[]) {
-  int listenfd, peer, ret, len;
+  int listenfd, peer, ret;
+  socklen_t len;
   char *service = "13";
   const int on = 1;
   char line[MAX_LINE + 1];

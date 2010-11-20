@@ -1,6 +1,8 @@
 RM = rm -f
 TOUCH = touch
 
+CFLAGS = -pedantic -Wall -Wextra
+
 PROGRAMS = date-client-basic \
 	   date-client \
 	   date-server \

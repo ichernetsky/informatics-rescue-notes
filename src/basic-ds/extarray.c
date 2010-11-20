@@ -47,8 +47,6 @@ int add (int value) {
     arr.max = EXTARRAY_INIT;
     arr.count = 0;
   } else if (arr.count >= arr.max) {
-    int i;
-
     int *newarr = (int *) malloc ((EXTARRAY_GROW * arr.max) * sizeof (int));
     if (NULL == newarr)
       return -1;
