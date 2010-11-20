@@ -17,11 +17,20 @@
 #define MAX_LINE         1460
 #define BACKLOG          SOMAXCONN
 #define HTTP_SERVER_PORT 45555
+#define HTTP_BUFFER_SIZE (MAX_LINE * 20)
 
 
-extern char HTTP_BUFFER[MAX_LINE];
-void init_buffer (void);
+extern char HTTP_BUFFER[HTTP_BUFFER_SIZE];
 
+
+/**
+ * Aux functions
+ */
+void ensure_buffer_initialized (void);
+int write_line (int fd, const char *line, size_t length);
+void write_http_headers (int fd);
+void write_http_body (int fd);
+void write_http_content (int fd);
 
 /**
  *  Signals
@@ -35,5 +44,20 @@ void sig_wait_child (int signo);
  *  Error handling
  */
 void err_quit (const char *where);
+
+
+/**
+ * Wrappers
+ */
+int socket_err (int domain, int type, int protocol);
+int setsockopt_err (int sockfd, int level, int optname,
+                    const void *optval, socklen_t optlen);
+int set_signal_handler_err (int signo, sig_func func);
+int bind_err (int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+int listen_err (int sockfd, int backlog);
+int accept_err (int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+pid_t fork_err (void);
+int close_err (int fd);
+void write_line_err (int fd, const char *line, size_t length);
 
 #endif /* _NETAUX_H */
