@@ -40,8 +40,7 @@
 
 Алгоритм поиска элемента в отсортированном массиве. В худшем случае выполняется за $\log{n}$.
 
-\lstset{label=lst:iter-bin-seaerch,caption=Итеративный алгоритм бинарного поиска}
-\begin{lstlisting}
+\begin{clst}{Итеративный алгоритм бинарного поиска}{lst:iter-bin-search}
 int binary_search (int elem, int array[], size_t length) {
   int mid, min = 0, max = length - 1;
 
@@ -57,10 +56,9 @@ int binary_search (int elem, int array[], size_t length) {
     return mid;
   return -1;
 }
-\end{lstlisting}
+\end{clst}
 
-\lstset{label=lst:rec-bin-seaerch,caption=Рекурсивный алгоритм бинарного поиска}
-\begin{lstlisting}
+\begin{clst}{Рекурсивный алгоритм бинарного поиска}{lst:rec-bin-search}
 int binary_search (int elem, int array[], size_t length) {
   return binary_search_aux (elem, array, 0, length - 1);
 }
@@ -79,7 +77,7 @@ int binary_search_aux (int elem, int array[], int low, int high) {
       return mid;
   }
 }
-\end{lstlisting}
+\end{clst}
 
 \section{Сортировка}
 \label{sec:sorting}
@@ -109,8 +107,7 @@ int binary_search_aux (int elem, int array[], int low, int high) {
   \end{tabular}
 \end{center}
 
-\lstset{label=lst:qsort,caption=Реализация}
-\begin{lstlisting}
+\begin{clst}{Реализация}{lst:qsort}
 void swap (int a[], int i, int j) {
   int tmp;
 
@@ -134,7 +131,7 @@ void quicksort (int a[], int n) {
   quicksort (a, last);
   quicksort (a + last + 1, n - last - 1);
 }
-\end{lstlisting}
+\end{clst}
 
 \subsection{Пирамидальная сортировка}
 
@@ -144,8 +141,7 @@ void quicksort (int a[], int n) {
   \item Первый элемент (максимальный) меняется с последним. Подмассив $[1..(n - 1)]$ легко преобразуется в пирамиду. Повторять эти действия пока необходимо.
 \end{itemize}
 
-\lstset{label=lst:heapsort,caption=Реализация}
-\begin{lstlisting}
+\begin{clst}{Реализация}{lst:heapsort}
 void heapsort (binheap *heap) {
   int i;
   int size = heap->size;
@@ -158,7 +154,7 @@ void heapsort (binheap *heap) {
   }
   heap->size = size;
 }
-\end{lstlisting}
+\end{clst}
 
 \section{Расширяемые массивы}
 \label{sec:ext-arrays}
@@ -177,8 +173,7 @@ void heapsort (binheap *heap) {
   \end{tabular}
 \end{center}
 
-\lstset{label=lst:dynarray-impl,caption=Некоторые операции}
-\begin{lstlisting}
+\begin{clst}{Некоторые операции}{lst:dynarray-impl}
 typedef struct extarray extarray;
 struct extarray {
   int count;
@@ -225,10 +220,9 @@ int del (int value) {
     }
   return 0;
 }
-\end{lstlisting}
+\end{clst}
 
-\lstset{label=lst:dynarray-usage,caption=Пример использования}
-\begin{lstlisting}
+\begin{clst}{Пример использования}{lst:dynarray-usage}
 int i;
 
 (void) add (5);
@@ -246,7 +240,7 @@ printf ("\n");
 for (i = 0; i < arr.count; i++)
   printf ("%d ", arr.array[i]);
 printf ("\n");
-\end{lstlisting}
+\end{clst}
 
 \section{Списки}
 \label{sec:lists}
@@ -266,8 +260,7 @@ printf ("\n");
 
 Ниже приведено определение списка и реализация некоторых операций над ним.
 
-\lstset{label=lst:list-impl,caption=Некоторые операции}
-\begin{lstlisting}
+\begin{clst}{Некоторые операции}{lst:list-impl}
 typedef struct list list;
 struct list {
   int data;
@@ -323,10 +316,9 @@ void print_backwards (list *elem) {
   print_backwards (elem->next);
   printf ("%x ", elem->data);
 }
-\end{lstlisting}
+\end{clst}
 
-\lstset{label=lst:list-usage,caption=Пример использования}
-\begin{lstlisting}
+\begin{clst}{Пример использования}{lst:list-usage}
 list *head = NULL;
 
 head = add_front (head, new_item (1));
@@ -344,7 +336,7 @@ head = remove_item (head, 5);
 
 print_backwards (head);
 printf ("\n");
-\end{lstlisting}
+\end{clst}
 
 \section{Бинарные деревья поиска}
 \label{sec:trees}
@@ -371,8 +363,7 @@ printf ("\n");
   \end{tabular}
 \end{center}
 
-\lstset{label=lst:bst-impl,caption=Некоторые операции}
-\begin{lstlisting}
+\begin{clst}{Некоторые операции}{lst:bst-impl}
 typedef struct tree tree;
 struct tree {
   int data;
@@ -419,10 +410,9 @@ void print_tree (tree *root) {
 void print_tree_aux (tree *root) {
   printf ("%d\n", root->data);
 }
-\end{lstlisting}
+\end{clst}
 
-\lstset{label=lst:bst-usage,caption=Пример использования}
-\begin{lstlisting}
+\begin{clst}{Пример использования}{lst:bst-usage}
 tree *root = NULL;
 
 root = insert (root, new_item (8));
@@ -432,7 +422,7 @@ root = insert (root, new_item (6));
 root = insert (root, new_item (10));
 
 print_tree (root);
-\end{lstlisting}
+\end{clst}
 
 \section{Бинарные пирамиды}
 \label{sec:bin-heaps}
@@ -456,8 +446,7 @@ print_tree (root);
   \end{tabular}
 \end{center}
 
-\lstset{label=lst:binheap-impl,caption=Некоторые операции}
-\begin{lstlisting}
+\begin{clst}{Некоторые операции}{lst:binheap-impl}
 #define HEAP_SIZE 50
 
 typedef struct binheap binheap;
@@ -510,10 +499,9 @@ void build_max_heap (binheap *heap) {
   for (i = toindex (heap->size / 2); i >= 0; i--)
     max_heapify (heap, i);
 }
-\end{lstlisting}
+\end{clst}
 
-\lstset{label=lst:binheap-usage,caption=Пример использования}
-\begin{lstlisting}
+\begin{clst}{Пример использования}{lst:binheap-usage}
 binheap heap = { { 9, 1, 11, 13, 7, 3, 15, 17, 5 },
                    9 };
 int i;
@@ -521,7 +509,7 @@ int i;
 build_max_heap (&heap);
 for (i = 0; i < heap.size; i++)
   printf ("%d ", heap.data[i]);
-\end{lstlisting}
+\end{clst}
 
 \section{Очереди с приоритетом}
 \label{sec:priority-queues}
@@ -536,8 +524,7 @@ for (i = 0; i < heap.size; i++)
 
 В следующей реализации ключ и данные представлены одним и тем же полем структуры для простоты.
 
-\lstset{label=lst:pqueue-impl,caption=Некоторые операции}
-\begin{lstlisting}
+\begin{clst}{Некоторые операции}{lst:pqueue-impl}
 int heap_maximum (binheap *heap) {
   return heap->data[0];
 }
@@ -567,10 +554,9 @@ void heap_insert (binheap *heap, int k) {
   heap->size += 1;
   heap_increase_key (heap, heap->size - 1, k);
 }
-\end{lstlisting}
+\end{clst}
 
-\lstset{label=lst:pqueue-usage,caption=Пример использования}
-\begin{lstlisting}
+\begin{clst}{Пример использования}{lst:pqueue-usage}
 binheap heap = { { 9, 1, 11, 13, 7, 3, 15, 17, 5 },
                    9 };
 int i;
@@ -582,7 +568,7 @@ heap_insert (&heap, 19);
 (void) heap_increase_key (&heap, 6, 12);
 for (i = 0; i < heap.size; i++)
   printf ("%d ", heap.data[i]);
-\end{lstlisting}
+\end{clst}
 
 \section{Хеш-таблицы}
 \label{sec:hash-tables}
@@ -621,8 +607,7 @@ for (i = 0; i < heap.size; i++)
 \subsection{Реализация}
 Хеш-таблица построена на основе обычного массива длины $m$. Разрешение коллизий по методу цепочек.
 
-\lstset{label=lst:htable-impl,caption=Некоторые операции}
-\begin{lstlisting}
+\begin{clst}{Некоторые операции}{lst:htable-impl}
 #define HTABLE_SIZE 20
 #define MULTIPLIER  31
 
@@ -669,10 +654,9 @@ unsigned int hash (char *str) {
     h = MULTIPLIER * h + *p;
   return h % HTABLE_SIZE;
 }
-\end{lstlisting}
+\end{clst}
 
-\lstset{label=lst:htable-usage,caption=Пример использования}
-\begin{lstlisting}
+\begin{clst}{Пример использования}{lst:htable-usage}
 char *strings[] = { "string1", "string2", "string3",
                     "string4", "string5" };
 int i;
@@ -687,7 +671,7 @@ for (i = 0; i < 5; i++) {
   else
     printf ("%s somewhere else\n", strings[i]);
 }
-\end{lstlisting}
+\end{clst}
 
 \section{Динамическое программирование}
 \label{sec:dyn-programming}

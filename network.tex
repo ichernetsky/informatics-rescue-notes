@@ -269,13 +269,11 @@ UDP не обеспечивает управления потоком. Быст�
 \subsection{Простейший DAYTIME клиент}
 Ниже приведен простейший DAYTIME клиент. В качестве аргументов командной строки должен быть указан IPv4-адрес и может быть указан номер порта.
 
-\lstset{label=lst:date-client-basic,caption=Простейший DAYTIME клиент}
-\lstinputlisting{src/network/date-client-basic.c}
+\lstinputlisting[style=cstyle,caption=Простейший DAYTIME клиент,label=lst:date-client-basic]{src/network/date-client-basic.c}
 
 Ниже приведен пример запуска клиента для сервера \texttt{time.ien.it}.
 
-\lstset{language=,label=lst:basic-client-run,caption=Использование}
-\begin{lstlisting}
+\begin{plainlst}{Использование}{lst:basic-client-run}
 % nslookup time.ien.it
 Server:		10.6.0.6
 Address:	10.6.0.6#53
@@ -287,15 +285,14 @@ Address: 193.204.114.105
 
 % date-client-basic 193.204.114.105
 20 OCT 2010 12:04:33 CEST
-\end{lstlisting}
+\end{plainlst}
 
 \subsubsection{Функция socket}
 Сетевой ввод/вывод начинается с вызовы функции \lstinline{socket}, передавая ей тип желаемого протокола.
-\lstset{language=C,caption=}
-\begin{lstlisting}
+\begin{clst}{}{}
 #include <sys/socket.h>
 int socket(int family, int type, int protocol);
-\end{lstlisting}
+\end{clst}
 
 Она возвращает неотрицательный дескриптор в случае успеха, -1 в случае ошибки. \lstinline{family} задает семейство протоколов.
 \begin{table}[h!]
@@ -351,11 +348,10 @@ int socket(int family, int type, int protocol);
 
 \subsubsection{Функция connect}
 Функция \lstinline{connect} используется для установления соединения.
-\lstset{language=C,caption=}
-\begin{lstlisting}
+\begin{clst}{}{}
 #include <sys/socket.h>
 int connect(int sockfd, const struct sockaddr *servaddr, socklen_t addrlen);
-\end{lstlisting}
+\end{clst}
 
 Аргумент \lstinline{sockfd} --- это дескриптор сокета, возвращенный функцией \lstinline{socket}. Структура адреса сокета должна содержать IP-адрес и номер порта сервера.
 
@@ -370,50 +366,44 @@ int connect(int sockfd, const struct sockaddr *servaddr, socklen_t addrlen);
 
 \subsubsection{Функции inet\_pton и inet\_ntop}
 Преобразуют IP-адрес, заданный как строка, в двоичный формат представления с сетевым порядком байт, и наоборот. Симфолы p и n обозначают соответсвенно формат \emph{представления} и \emph{численный} формат.
-\lstset{language=C,caption=}
-\begin{lstlisting}
+\begin{clst}{}{}
 #include <arpa/inet.h>
 int inet_pton(int family, const char *str, void *addr);
 
 #include <arpa/inet.h>
 const char *inet_ntop(int family, const void *addr, char *str,
                       socklen_t len);
-\end{lstlisting}
+\end{clst}
 
 Значение аргумента \lstinline{family} может быть либо \lstinline{AF_INET}, либо \lstinline{AF_INET6}. Если \lstinline{family} не поддерживается, функции возвращают ошибку со значением переменной \lstinline{errno}, равным \lstinline{EAFNOSUPPORT}. В качестве \lstinline{len} рекомендуется использовать макросы, определенные в \lstinline{<netinet/in.h>}:
-\lstset{language=C,caption=}
-\begin{lstlisting}
+\begin{clst}{}{}
 #define  INET_ADDRSTRLEN    16
 #define  INET6_ADDRSTRLEN   46
-\end{lstlisting}
+\end{clst}
 
 \subsection{DAYTIME клиент, независящий от протокола}
 В качестве адреса могут быть указаны IPv4-адрес, IPv6-адрес или же доменное имя.
 
-\lstset{label=lst:date-client,caption=DAYTIME клиент}
-\lstinputlisting{src/network/date-client.c}
+\lstinputlisting[style=cstyle,caption=DAYTIME клиент,label=lst:date-client]{src/network/date-client.c}
 
 Ниже приведен пример запуска клиента для сервера \texttt{time.ien.it}.
-\lstset{language=,label=lst:client-run,caption=Использование}
-\begin{lstlisting}
+\begin{plainlst}{Использование}{lst:client-run}
 % date-client time.ien.it
 20 OCT 2010 12:04:33 CEST
-\end{lstlisting}
+\end{plainlst}
 
 \subsubsection{Функция getaddrinfo}
 Осущетсвляет трансляцию имен в адреса и служб в порты. Возвращает список структур \lstinline{sockaddr}. Функция \lstinline{getaddrinfo} скрывает все различия между протоколами в библиотеке функций.
 
-\lstset{language=C,caption=}
-\begin{lstlisting}
+\begin{clst}{}{}
 #include <netdb.h>
 int getaddrinfo(const char *node, const char *service,
                 const struct addrinfo *hints,
                 struct addrinfo **res);
-\end{lstlisting}
+\end{clst}
 
 Через указатель \lstinline{res} функция возвращает указатель на связный список структур \lstinline{addrinfo}.
-\lstset{language=C,caption=}
-\begin{lstlisting}
+\begin{clst}{}{}
 struct addrinfo {
   int              ai_flags;      /* AI_PASSIVE, AI_CANONNAME */
   int              ai_family;     /* AF_xxx */
@@ -424,7 +414,7 @@ struct addrinfo {
   char            *ai_canonname;  /* pointer to socket address structure */
   struct addrinfo *ai_next;       /* pointer to next structure in list */
 };
-\end{lstlisting}
+\end{clst}
 
 Переменная \lstinline{node} --- это либо имя узла, либо строка адреса (точечно-десятичная запись для IPv4 или шестнадцатеричная строка для IPv6). Переменная \lstinline{service} --- это либо имя службы, либо строка, содержащая десятичный номер порта.
 
@@ -445,16 +435,14 @@ struct addrinfo {
 \subsection{Последовательный DAYTIME сервер}
 В качестве аргументов командной строки может быть указан номер порта для прослушивания.
 
-\lstset{label=lst:date-server,caption=DAYTIME сервер}
-\lstinputlisting{src/network/date-server.c}
+\lstinputlisting[style=cstyle,caption=DAYTIME сервер,label=lst:date-server]{src/network/date-server.c}
 
 \subsubsection{Функция bind}
 Функция \lstinline{bind} связывает сокет с локальным адресом протокола, комбинацией адреса IP с номером порта.
-\lstset{language=C,caption=}
-\begin{lstlisting}
+\begin{clst}{}{}
 #include <sys/socket.h>
 int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
-\end{lstlisting}
+\end{clst}
 
 Вторым аргументом является указатель на специфичный для протокола адрес, а третий аргумент --- это размер структуры адреса.
 
@@ -463,11 +451,10 @@ int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 Если зададать нулевой номер порта, то при вызове функции \lstinline{bind} ядро выберет динамически назначаемый порт. Но если задать IP-адрес с помощью символов подстановки, ядро не выберет локальный IP-адрес, пока к сокету не присоединиться клиент либо на сокет не будет отправлена дейтаграмма.
 
 В случае IPv4 универсальный адрес состоящий из символов подстановки, задается константой \lstinline{INADDR_ANY}.
-\lstset{language=C,caption=}
-\begin{lstlisting}
+\begin{clst}{}{}
 struct sockaddr_in addr;
 servaddr.sin_addr.s_addr = htonl (INADDR_ANY);
-\end{lstlisting}
+\end{clst}
 
 \subsubsection{Функция listen}
 Функция \lstinline{listen} вызывается только сервером TCP и выполняет два действия.
@@ -476,11 +463,10 @@ servaddr.sin_addr.s_addr = htonl (INADDR_ANY);
   \item Второй аргумент этой функции задает максимальное число соединений, которые ядро может помещать в очередь этого сокета.
 \end{enumerate}
 
-\lstset{language=C,caption=}
-\begin{lstlisting}
+\begin{clst}{}{}
 #include <sys/socket.h>
 int listen(int sockfd, int backlog);
-\end{lstlisting}
+\end{clst}{}{}
 
 Чтобы уяснить смысл аргумента \lstinline{backlog}, необходимо понять, что для данного прослушиваемого сокета ядро поддерживает две очереди:
 \begin{enumerate}
@@ -499,11 +485,10 @@ int listen(int sockfd, int backlog);
 
 \subsubsection{Функция accept}
 Функция \lstinline{accept} вызывается сервером TCP для возвращения следующего установленного соединения из начала очереди полностью установленных соединений. Если очередь полностью установленных соединений пуста, процесс переходит в состояние ожидания (по умолчанию предполагается блокируемый сокет).
-\lstset{language=C,caption=}
-\begin{lstlisting}
+\begin{clst}{}{}
 #include <sys/socket.h>
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
-\end{lstlisting}
+\end{clst}
 
 Аргументы \lstinline{addr} и \lstinline{addrlen} используется для возвращения адреса протокола подключившегося процесса (клиента). Если функция \lstinline{accept} завершилась успешно, она возвращает новый дескриптор, автоматически созданный ядром. Этот дескриптор используется для обращения к соединению TCP с конкретным клиентом. Функция \lstinline{accept} принимает \emph{прослушиваемый сокет} и возвращает \emph{присоединенный сокет}.
 
@@ -755,8 +740,7 @@ IANA (Internet Assigned Numbers Authority --- агенство по выделе
 
 \subsubsection{ping}
 Утилита ping посылает ICMP пакеты ECHO\_REQUEST на указанный узел и использует полученные (или неполученные) в ответ ICMP пакеты ECHO\_RESPONSE для определения доступности этого узла и затраченного времени.
-\lstset{language=,caption=}
-\begin{lstlisting}
+\begin{plainlst}{}{}
 % ping -c 3 informatics.by
 PING informatics.by (91.149.157.152) 56(84) bytes of data.
 64 bytes from vh24.hoster.by (91.149.157.152): icmp_req=1 ttl=59 time=403 ms
@@ -766,12 +750,11 @@ PING informatics.by (91.149.157.152) 56(84) bytes of data.
 --- informatics.by ping statistics ---
 3 packets transmitted, 3 received, 0% packet loss, time 1999ms
 rtt min/avg/max/mdev = 267.651/356.916/403.512/63.140 ms
-\end{lstlisting}
+\end{plainlst}
 
 \subsubsection{traceroute}
 Утилита traceroute позволяет выяснить маршрут следования пакетов к узлу назначения. Для этого она посылает серию UDP пакетов c TTL от 1 до 30 (эти параметры можно менять) и получает ответы от промежуточных маршрутизаторов об истечении TTL (ICMP TIME\_EXCEEDED).
-\lstset{language=,caption=}
-\begin{lstlisting}
+\begin{plainlst}{}{}
 % traceroute informatics.by
 traceroute to informatics.by (91.149.157.152), 30 hops max, 60 byte packets
  1  10.10.224.1 (10.10.224.1)  459.626 ms  679.630 ms  683.505 ms
@@ -781,26 +764,24 @@ traceroute to informatics.by (91.149.157.152), 30 hops max, 60 byte packets
  5  gi15-0-0.ne1-1-2.net.belpak.by (93.84.125.9)  1287.400 ms  1290.625 ms  1294.567 ms
  6  gw2.datacenter.beltelecom.by (93.84.125.165)  1294.530 ms  255.403 ms  327.064 ms
  7  vh24.hoster.by (91.149.157.152)  334.976 ms  386.862 ms  762.791 ms
-\end{lstlisting}
+\end{plainlst}
 
 \subsubsection{route}
 Выводит или изменяет таблицу маршрутизации IP-пакетов.
-\lstset{language=,caption=}
-\begin{lstlisting}
+\begin{plainlst}{}{}
 % route add -net 192.56.76.0 netmask 255.255.255.0 dev eth0
-\end{lstlisting}
+\end{plainlst}
 
 \subsubsection{netstat}
 Может напечатать список откртых сокетов, таблицу маршрутизации, таблицу сетевых интерфейсов, статистику по каждому протоколу и т.д.
-\lstset{language=,caption=}
-\begin{lstlisting}
+\begin{plainlst}{}{}
 % netstat -nr
 Kernel IP routing table
 Destination   Gateway    Genmask         Flags   MSS Window  irtt Iface
 10.6.6.6      0.0.0.0    255.255.255.255 UH        0 0          0 ppp0
 169.254.0.0   0.0.0.0    255.255.0.0     U         0 0          0 ppp0
 0.0.0.0       10.6.6.6   0.0.0.0         UG        0 0          0 ppp0
-\end{lstlisting}
+\end{plainlst}
 
 \subsubsection{ifconfig}
 Команда ifconfig используется для конфигурирования сетевых интерфейсов ядра.
@@ -813,9 +794,8 @@ Destination   Gateway    Genmask         Flags   MSS Window  irtt Iface
 \subsubsection{tcpdump}
 Позволяет перехватывать и анализировать сетевой трафик. Для выполнения требует прав суперпользователя и прямой доступ к устройтсву.
 
-\lstset{language=,caption=Типичный вывод tcpdump}
-\begin{lstlisting}
-% sudo tcpdump -i lo
+\begin{plainlst}{Типичный вывод tcpdump}{}
+% tcpdump -i lo
 tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
 listening on lo, link-type EN10MB (Ethernet), capture size 65535 bytes
 22:02:04.021905 IP localhost.localdomain.43849 > localhost.localdomain.6600: Flags [P.], seq 2463307991:2463307998, ack 2463842528, win 770, options [nop,nop,TS val 12929880 ecr 12929629], length 7
@@ -825,7 +805,7 @@ listening on lo, link-type EN10MB (Ethernet), capture size 65535 bytes
 3 packets captured
 6 packets received by filter
 0 packets dropped by kernel
-\end{lstlisting}
+\end{plainlst}
 
 \subsubsection{tcpreplay}
 Позволяет перепосылает все пакеты из файла, полученного утилитой tcpdump. Скорость можно устанавливать.

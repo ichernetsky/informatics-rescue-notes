@@ -38,7 +38,6 @@
   font={bf,footnotesize}}
 
 \lstset{
-  language=C,
   basicstyle=\footnotesize\ttfamily,
   numbers=left,
   numberstyle=\tiny,
@@ -56,6 +55,16 @@
   showtabs=false,
   captionpos=t,
 }
+
+\lstdefinestyle{plainstyle}{language=}
+\lstnewenvironment{plainlst}[2]
+  {\lstset{style=plainstyle,caption=#1,label=#2}}
+  {}
+
+\lstdefinestyle{cstyle}{language=C}
+\lstnewenvironment{clst}[2]
+  {\lstset{style=cstyle,caption=#1,label=#2}}
+  {}
 
 \title{Informatics Rescue}
 \author{Вадим Шендер, Иван Чернецкий}
