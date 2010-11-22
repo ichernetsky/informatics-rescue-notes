@@ -200,3 +200,14 @@ void pthread_mutex_unlock_err (pthread_mutex_t *mutex) {
   if (pthread_mutex_unlock (mutex) != 0)
     exit (EXIT_FAILURE);
 }
+
+int select_err (int nfds, fd_set *readfds, fd_set *writefds,
+                fd_set *exceptfds, struct timeval *timeout)
+{
+  int nready;
+
+  if ((nready = select (nfds, readfds, writefds, exceptfds, timeout)) < 0)
+    err_quit ("select");
+
+  return nready;
+}

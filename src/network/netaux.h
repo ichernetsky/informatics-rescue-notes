@@ -5,15 +5,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <unistd.h>
-#include <signal.h>
-#include <errno.h>
+
 #include <arpa/inet.h>
+#include <errno.h>
+#include <netdb.h>
+#include <pthread.h>
+#include <signal.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <netdb.h>
-#include <pthread.h>
+#include <unistd.h>
 
 
 #define MAX_LINE         1460
@@ -58,6 +60,8 @@ int accept_err (int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 pid_t fork_err (void);
 int close_err (int fd);
 void write_line_err (int fd, const char *line, size_t length);
+int select_err (int nfds, fd_set *readfds, fd_set *writefds,
+                fd_set *exceptfds, struct timeval *timeout);
 
 void pthread_create_err (pthread_t *thread, const pthread_attr_t *attr,
                          void *(*start_routine) (void *), void *arg);

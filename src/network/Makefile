@@ -8,7 +8,8 @@ PROGRAMS = date-client-basic \
 	   date-client \
 	   date-server \
 	   http-server-fork \
-	   http-server-thread
+	   http-server-thread \
+	   http-server-select
 
 .PHONY: all
 all: $(PROGRAMS)

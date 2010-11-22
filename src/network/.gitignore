@@ -3,3 +3,4 @@ date-client
 date-server
 http-server-fork
 http-server-thread
+http-server-select
