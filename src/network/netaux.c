@@ -3,17 +3,24 @@
 char HTTP_BUFFER[HTTP_BUFFER_SIZE];
 
 void ensure_buffer_initialized (void) {
+  pthread_mutex_t HTTP_BUFFER_MUTEX = PTHREAD_MUTEX_INITIALIZER;
   static int once_run = 0;
   int i;
 
-  if (once_run)
+  pthread_mutex_lock_err (&HTTP_BUFFER_MUTEX) ;
+
+  if (once_run) {
+    pthread_mutex_unlock_err (&HTTP_BUFFER_MUTEX);
     return;
+  }
 
   for (i = 0; i < HTTP_BUFFER_SIZE - 2; i++)
     HTTP_BUFFER[i] = 'a';
   HTTP_BUFFER[HTTP_BUFFER_SIZE - 2 - 1] = '\r';
   HTTP_BUFFER[HTTP_BUFFER_SIZE - 1 - 1] = '\n';
   once_run = 1;
+
+  pthread_mutex_unlock_err (&HTTP_BUFFER_MUTEX);
 }
 
 int set_signal_handler (int signo, sig_func func) {
@@ -170,4 +177,26 @@ void write_http_content (int fd) {
   write_http_headers (fd);
   write_line_err (fd, "\r\n", strlen ("\r\n"));
   write_http_body (fd);
+}
+
+void pthread_create_err (pthread_t *thread, const pthread_attr_t *attr,
+                         void *(*start_routine) (void *), void *arg)
+{
+  if (pthread_create (thread, attr, start_routine, arg) != 0)
+    exit (EXIT_FAILURE);
+}
+
+void pthread_detach_err (pthread_t thread) {
+  if (pthread_detach (thread) != 0)
+    exit (EXIT_FAILURE);
+}
+
+void pthread_mutex_lock_err (pthread_mutex_t *mutex) {
+  if (pthread_mutex_lock (mutex) != 0)
+    exit (EXIT_FAILURE);
+}
+
+void pthread_mutex_unlock_err (pthread_mutex_t *mutex) {
+  if (pthread_mutex_unlock (mutex) != 0)
+    exit (EXIT_FAILURE);
 }

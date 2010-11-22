@@ -13,15 +13,13 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <netdb.h>
+#include <pthread.h>
 
 
 #define MAX_LINE         1460
 #define BACKLOG          SOMAXCONN
 #define HTTP_SERVER_PORT 45555
 #define HTTP_BUFFER_SIZE (MAX_LINE * 20)
-
-
-extern char HTTP_BUFFER[HTTP_BUFFER_SIZE];
 
 
 /**
@@ -60,5 +58,11 @@ int accept_err (int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 pid_t fork_err (void);
 int close_err (int fd);
 void write_line_err (int fd, const char *line, size_t length);
+
+void pthread_create_err (pthread_t *thread, const pthread_attr_t *attr,
+                         void *(*start_routine) (void *), void *arg);
+void pthread_detach_err (pthread_t thread);
+void pthread_mutex_lock_err (pthread_mutex_t *mutex);
+void pthread_mutex_unlock_err (pthread_mutex_t *mutex);
 
 #endif /* _NETAUX_H */

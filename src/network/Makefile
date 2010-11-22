@@ -1,12 +1,14 @@
 RM = rm -f
 TOUCH = touch
 
-CFLAGS = -pedantic -Wall -Wextra
+CFLAGS = -pedantic -Wall -Wextra -pthread
+LDFLAGS = -pthread
 
 PROGRAMS = date-client-basic \
 	   date-client \
 	   date-server \
-	   http-server-fork
+	   http-server-fork \
+	   http-server-thread
 
 .PHONY: all
 all: $(PROGRAMS)
