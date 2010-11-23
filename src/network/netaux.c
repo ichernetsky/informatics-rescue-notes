@@ -1,9 +1,9 @@
 #include "netaux.h"
 
 char HTTP_BUFFER[HTTP_BUFFER_SIZE];
+pthread_mutex_t HTTP_BUFFER_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 
 void ensure_buffer_initialized (void) {
-  pthread_mutex_t HTTP_BUFFER_MUTEX = PTHREAD_MUTEX_INITIALIZER;
   static int once_run = 0;
   int i;
 
