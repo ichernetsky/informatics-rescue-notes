@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netdb.h>
+#include <poll.h>
 #include <pthread.h>
 #include <signal.h>
 #include <sys/select.h>
@@ -62,6 +63,7 @@ int close_err (int fd);
 void write_line_err (int fd, const char *line, size_t length);
 int select_err (int nfds, fd_set *readfds, fd_set *writefds,
                 fd_set *exceptfds, struct timeval *timeout);
+int poll_err (struct pollfd *fds, nfds_t nfds, int timeout);
 
 void pthread_create_err (pthread_t *thread, const pthread_attr_t *attr,
                          void *(*start_routine) (void *), void *arg);

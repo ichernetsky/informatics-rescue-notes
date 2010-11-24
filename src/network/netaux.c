@@ -211,3 +211,12 @@ int select_err (int nfds, fd_set *readfds, fd_set *writefds,
 
   return nready;
 }
+
+int poll_err (struct pollfd *fds, nfds_t nfds, int timeout) {
+  int nready;
+
+  if ((nready = poll (fds, nfds, timeout)) < 0)
+    err_quit ("poll");
+
+  return nready;
+}
