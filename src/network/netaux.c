@@ -220,3 +220,28 @@ int poll_err (struct pollfd *fds, nfds_t nfds, int timeout) {
 
   return nready;
 }
+
+int epoll_create_err (int size) {
+  int epfd;
+
+  if ((epfd = epoll_create (size)) < 0)
+    err_quit ("epoll_create");
+
+  return epfd;
+}
+
+int epoll_wait_err (int epfd, struct epoll_event *events,
+                    int maxevents, int timeout)
+{
+  int nready;
+
+  if ((nready = epoll_wait (epfd, events, maxevents, timeout)) < 0)
+    err_quit ("epoll_wait");
+
+  return nready;
+}
+
+void epoll_ctl_err (int epfd, int op, int fd, struct epoll_event *event) {
+  if (epoll_ctl (epfd, op, fd, event) < 0)
+    err_quit ("epoll_ctl");
+}

@@ -10,7 +10,8 @@ PROGRAMS = date-client-basic \
 	   http-server-fork \
 	   http-server-thread \
 	   http-server-select \
-	   http-server-poll
+	   http-server-poll \
+	   http-server-epoll
 
 .PHONY: all
 all: $(PROGRAMS)

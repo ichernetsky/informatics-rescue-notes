@@ -12,6 +12,7 @@
 #include <poll.h>
 #include <pthread.h>
 #include <signal.h>
+#include <sys/epoll.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -23,6 +24,7 @@
 #define BACKLOG          SOMAXCONN
 #define HTTP_SERVER_PORT 45555
 #define HTTP_BUFFER_SIZE (MAX_LINE * 20)
+#define EPOLL_SIZE       1024
 
 
 /**
@@ -64,6 +66,10 @@ void write_line_err (int fd, const char *line, size_t length);
 int select_err (int nfds, fd_set *readfds, fd_set *writefds,
                 fd_set *exceptfds, struct timeval *timeout);
 int poll_err (struct pollfd *fds, nfds_t nfds, int timeout);
+int epoll_create_err (int size);
+int epoll_wait_err (int epfd, struct epoll_event *events,
+                    int maxevents, int timeout);
+void epoll_ctl_err (int epfd, int op, int fd, struct epoll_event *event);
 
 void pthread_create_err (pthread_t *thread, const pthread_attr_t *attr,
                          void *(*start_routine) (void *), void *arg);
