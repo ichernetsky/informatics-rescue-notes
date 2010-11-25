@@ -7,13 +7,7 @@ int main (void) {
   struct sockaddr_in servaddr, peeraddr;
   socklen_t len;
   int on = 1;
-  struct epoll_event ev, *events;
-  struct rlimit rl;
-  rlim_t openmax = 1024;
-
-  if (getrlimit (RLIMIT_NOFILE, &rl) != -1)
-    openmax = rl.rlim_max;
-  events = (struct epoll_event *) malloc (sizeof (struct epoll_event) * openmax);
+  struct epoll_event ev, events[EPOLL_MAX_EVENTS];
 
   listenfd = socket_err (AF_INET, SOCK_STREAM, 0);
   setsockopt_err (listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof (on));

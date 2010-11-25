@@ -8,6 +8,7 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
+#include <limits.h>
 #include <netdb.h>
 #include <poll.h>
 #include <pthread.h>
@@ -24,7 +25,8 @@
 #define BACKLOG          SOMAXCONN
 #define HTTP_SERVER_PORT 45555
 #define HTTP_BUFFER_SIZE (MAX_LINE * 20)
-#define EPOLL_SIZE       1024
+#define EPOLL_SIZE       1   /* actually this is not used any by kernel */
+#define EPOLL_MAX_EVENTS (INT_MAX / sizeof (struct epoll_event))
 
 
 /**
