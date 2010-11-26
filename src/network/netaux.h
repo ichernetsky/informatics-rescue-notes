@@ -25,13 +25,15 @@
 #define BACKLOG          SOMAXCONN
 #define HTTP_SERVER_PORT 45555
 #define HTTP_BUFFER_SIZE (MAX_LINE * 20)
-#define EPOLL_SIZE       1   /* actually this is not used any by kernel */
-#define EPOLL_MAX_EVENTS (INT_MAX / sizeof (struct epoll_event))
+#define EPOLL_MAX_EVENTS 50000
+#define EPOLL_SIZE       1
 
 
 /**
  * Aux functions
  */
+int tcp_listen (void);
+int tcp_accept (int listenfd);
 void ensure_buffer_initialized (void);
 int write_line (int fd, const char *line, size_t length);
 void write_http_headers (int fd);

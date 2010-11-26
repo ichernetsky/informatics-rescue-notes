@@ -1,23 +1,12 @@
 #include "netaux.h"
 
 int main (void) {
-  int i, maxi, maxfd, listenfd, peer;
+  int listenfd, peer;
+  int i, maxi, maxfd;
   int nready, client[FD_SETSIZE];
-  struct sockaddr_in servaddr, peeraddr;
-  socklen_t len;
-  int on = 1;
   fd_set rset, wset, persistent;
 
-  listenfd = socket_err (AF_INET, SOCK_STREAM, 0);
-  setsockopt_err (listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof (on));
-
-  bzero (&servaddr, sizeof (servaddr));
-  servaddr.sin_family = AF_INET;
-  servaddr.sin_addr.s_addr = htonl (INADDR_ANY);
-  servaddr.sin_port = htons (HTTP_SERVER_PORT);
-
-  bind_err (listenfd, (struct sockaddr *) &servaddr, sizeof (servaddr));
-  listen_err (listenfd, BACKLOG);
+  listenfd = tcp_listen ();
 
   maxfd = listenfd;
   maxi = -1;
@@ -34,8 +23,7 @@ int main (void) {
     nready = select_err (maxfd + 1, &rset, &wset, NULL, NULL);
 
     if (FD_ISSET (listenfd, &rset)) {
-      len = sizeof (peeraddr);
-      peer = accept_err (listenfd, (struct sockaddr *) &peeraddr, &len);
+      peer = tcp_accept (listenfd);
 
       for (i = 0; i < FD_SETSIZE; i++)
         if (client[i] < 0) {
