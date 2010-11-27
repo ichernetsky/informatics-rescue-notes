@@ -66,6 +66,11 @@
   {\lstset{style=cstyle,caption=#1,label=#2}}
   {}
 
+\lstdefinestyle{pystyle}{language=Python,mathescape}
+\lstnewenvironment{pylst}[2]
+  {\lstset{style=pystyle,caption=#1,label=#2}}
+  {}
+
 \title{Informatics Rescue}
 \author{Вадим Шендер, Иван Чернецкий}
 
@@ -77,4 +82,5 @@
 \input{basic-ds.tex}
 \input{concurrent.tex}
 \input{network.tex}
+\input{python.tex}
 \end{document}
