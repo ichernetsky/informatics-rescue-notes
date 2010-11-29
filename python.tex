@@ -1,8 +1,8 @@
 \chapter{Язык программирования Python}
-\label{ch:Python}
+\label{ch:python}
 
 \section{Операторы}
-\label{sec:statements}
+\label{sec:py-statements}
 
 \subsubsection{Оператор if}
 Общая форма оператора \lstinline{if} выглядит следующим образом:
@@ -61,3 +61,108 @@ finally: suite
 Блок \lstinline{else} выполняется в том случае, если управление достигло конца блока \lstinline{try}. Исключения, возникшие в блоке \lstinline{else} не обрабатываются предыдущими ему обработчиками.
 
 Блок \lstinline{finally} выполняется всегда, где бы исключительная ситуация не возникла: внутри блок \lstinline{try}, \lstinline{except} или же \lstinline{else}.
+
+\section{Декораторы}
+\label{sec:py-decorators}
+Декоратор --- объект, который можно вызвать с одним аргументом. Он волен делать с переданным аргументом всё, что угодно, лишь бы программа оставалась корректной.
+\begin{pylst}{}{}
+def debug(func):
+    def wrapped(*args, **kwargs):
+        print "%s called with: %s, %s" % (func.__name__, args, kwargs)
+        ret = func(*args, **kwargs)
+        print "%s returned: %s" % (func.__name__, ret)
+        return ret
+    return wrapped
+
+@debug
+def inc(i):
+    return i + 1
+\end{pylst}
+
+@-синтаксис введен всего лишь для удобства. Вышеопределенное декорирование эквивалентно следующему:
+\begin{pylst}{}{}
+def inc(i):
+    return i + 1
+
+inc = debug(inc)
+\end{pylst}
+
+Пример вызова декорированной функции \lstinline{inc}:
+\begin{pylst}{}{}
+>>> inc(1)
+inc called with: (1,), {}
+inc returned: 2
+\end{pylst}
+
+\subsection{Примеры декораторов}
+\subsubsection{Псевдокаррирование}
+Каррирование или карринг (англ. currying) в информатике --- преобразование функции от пары аргументов в функцию, берущую свои аргументы по одному.
+\begin{pylst}{}{}
+class curried(object):
+    def __init__(self, func, *a):
+        self.func = func
+        self.args = a
+
+    def __call__(self, *a):
+        args = self.args + a
+        if len(args) < self.func.__code__.co_argcount:
+            return curried(self.func, *args)
+        else:
+            return self.func(*args)
+
+@curried
+def add(a, b):
+    return a + b
+
+add1 = add(1)
+print add1(2)
+\end{pylst}
+
+\subsubsection{Синхронизация}
+Декорированная функция пытается захватить взаимное исключение перед тем, как исполняться.
+
+\begin{pylst}{}{}
+def synchronized(lock):
+    def wrap(f):
+        def sync(*args, **kwargs):
+            lock.acquire()
+            try:
+                return f(*args, **kwargs)
+            finally:
+                lock.release()
+        return sync
+    return wrap
+
+# Example usage:
+
+from threading import Lock
+lock = Lock()
+
+@synchronized(lock)
+def critical_one(*args):
+    pass
+
+@synchronized(lock)
+def critical_two(*args):
+    pass
+\end{pylst}
+
+\subsubsection{Декоратор, мурштрующий декораторы}
+Есть проблема с декорированной функции, например, ее свойство \lstinline{__name__} больше не равно ее действительному имени после декорирования. Следующий декоратор, призванный декорировать другие декораторы, этот досадный недостаток устраняет.
+\begin{pylst}{}{}
+def well_behaved(decorator):
+    def new_decorator(f):
+        g = decorator(f)
+        g.__name__ = f.__name__
+        g.__doc__ = f.__doc__
+        g.__dict__.update(f.__dict__)
+        return g
+    new_decorator.__name__ = decorator.__name__
+    new_decorator.__doc__ = decorator.__doc__
+    new_decorator.__dict__.update(decorator.__dict__)
+    return new_decorator
+
+# Sample Use:
+
+synchronized = well_behabed(synchronized)
+\end{pylst}
