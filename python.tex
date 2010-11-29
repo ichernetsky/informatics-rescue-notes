@@ -147,7 +147,7 @@ def critical_two(*args):
     pass
 \end{pylst}
 
-\subsubsection{Декоратор, мурштрующий декораторы}
+\subsubsection{Декоратор, муштрующий декораторы}
 Есть проблема с декорированной функции, например, ее свойство \lstinline{__name__} больше не равно ее действительному имени после декорирования. Следующий декоратор, призванный декорировать другие декораторы, этот досадный недостаток устраняет.
 \begin{pylst}{}{}
 def well_behaved(decorator):
@@ -164,5 +164,104 @@ def well_behaved(decorator):
 
 # Sample Use:
 
-synchronized = well_behabed(synchronized)
+synchronized = well_behaved(synchronized)
 \end{pylst}
+
+\section{Метаклассы}
+В Python классы --- такие же объекты, как и всё остальное. Их можно передавать в качестве аргументов функциям или рассматривать под микроскопом. Так же как класс определяет поведение объектов, так и метакласс определяет поведение своих классов. Самый распростаненный метакласс в Python --- \lstinline{type}.
+
+\begin{pylst}{}{}
+>>> object.__class__
+<type 'type'>
+>>> type(object)
+<type 'type'>
+\end{pylst}
+
+Часто метаклассы используются как фабрики. Когда Python создает новый класс (при выполнении оператора \lstinline{class}), он вызывает метакласс. Метакласс в свою очередь может поместить класс в какой-нибудь регистр или же вернуть \emph{совсем} другой класс. Для подавляющего большинства --- если не всех --- встроенных типов метаклассом является метакласс \lstinline{type}.
+
+\begin{pylst}{}{}
+# prototype
+type(name, bases, dict)
+\end{pylst}
+где \lstinline{name} --- имя нового класса, \lstinline{bases} --- последовательность базовый классов (может быть пустой), а \lstinline{dict} --- словарь, ключи которого являются именами аттрибутов создаваемого класса, а значения --- значениями этих аттрибутов.
+
+Определение
+\begin{pylst}{}{}
+class MyClass(BaseClass):
+    attribute = 42
+\end{pylst}
+эквивалентно
+\begin{pylst}{}{}
+MyClass = type("MyClass", (BaseClass,), { 'attribute' : 42 })
+\end{pylst}
+
+Метакласс для класса указывается с помощью поля \lstinline{__metaclass__}. В метаклассе можно (пере)определять любые методы, как и в любом классе, с тем отличием, что методам класса передается экземпляр первым аргументом (отсюда и общеупотребимое \lstinline{self}), а методам метакласса --- класс. Поэтому первый аргумент часто именуется \lstinline{cls}.
+
+\begin{pylst}{}{}
+class UselessType(type):
+    def __new__(cls, name, bases, dct):
+        print "Allocating memory for class", name
+        return type.__new__(cls, name, bases, dct)
+
+    def __init__(cls, name, bases, dct):
+        print "Init'ing (configuring) class", name
+        super(UselessType, cls).__init__(name, bases, dct)
+
+    def __call__(cls, *args, **kwargs):
+        print "Calling %s" % cls.__name__
+        return super(UselessType, cls).__call__(*args, **kwargs)
+
+    def whoami(cls):
+        print cls.__name__
+
+class UselessClass(object):
+    __metaclass__ = UselessType
+
+>>> UselessClass.whoami()
+UselessClass
+>>> UselessClass()
+Calling <class '__main__.UselessClass'>
+\end{pylst}
+
+Когда выполняется оператор \lstinline{class}, Python вначале выполняет внутреннее содержимое как обычный блок кода. В результате получается пространство имен, представленное словарем. Затем Python ищет метакласс для создаваемого класса в следующей последовательности:
+\begin{enumerate}
+  \item Если \lstinline{dict['__metaclass__']} существуют, то используется он.
+  \item В ином случае, если у класса есть базовые классы, их метакласс используется (сначала проверяется аттрибут \lstinline{__class__}, и если такого нет, то исползуется тип базового класса).
+  \item В ином случае, если есть глобальная переменная \lstinline{__metaclass__}, то используется она.
+\end{enumerate}
+
+После чего метакласс вызывается с именем вновь создаваемого класса, его базовыми классами и словарем аттрибутов как аргументами.
+
+Полю \lstinline{__metaclass__} можно присваивать не только метаклассы, но и любой вызываемый (callable) объект, который принимает три аргумента.
+\begin{pylst}{}{}
+def meta(name, bases, dct):
+    # setting useless attr
+    dct['foo'] = 'bar'
+    return type(name, bases, dct)
+
+class Bar(object):
+    __metaclass__ = meta
+
+>>> Bar().foo
+'bar'
+\end{pylst}
+
+Следом идет реализация паттерна Singleton с помощью метакласса:
+\begin{pylst}{}{}
+class SingletonMetaclass(type):
+    instance = None
+
+    def __call__(cls, *args, **kwargs):
+        if cls.instance is None:
+            cls.instance = super(SingletonMetaclass, cls).__call__(
+                *args, **kwargs)
+        return cls.instance
+
+class Foo(object):
+     __metaclass__ = SingletonMetaclass
+
+>>> Foo() is Foo()
+True
+\end{pylst}
+
+Как говорится в руководстве по Python, области применения метаклассов безграничны, что, конечно же, является бесстыдным враньём. Вот несколько из общеизвестных применений: logging, проверка интерфейсов, автоматическое делегирование, автоматическое создание свойств класса, прокси, ORM и автоматическая синхронизация/захват ресурса.
