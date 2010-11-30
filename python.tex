@@ -478,3 +478,51 @@ True
 \end{pylst}
 
 Как говорится в руководстве по Python, области применения метаклассов безграничны, что, конечно же, является бесстыдным враньём. Вот несколько из общеизвестных применений: logging, проверка интерфейсов, автоматическое делегирование, автоматическое создание свойств класса, прокси, ORM и автоматическая синхронизация/захват ресурса.
+
+\section{Интроспекция}
+\label{sec:py-introspection}
+В Python можно получить подробную информацию о внутренней структуре любого объекта и среды исполнения. Необходимые для интроспекции данные хранятся в специальных атрибутах. Так, например, получить все пользовательские атрибуты большинства объектов можно из специального атрибута --- словаря (или объекта, предоставляющего dict интерфейс) \lstinline{__dict__}.
+\begin{pylst}{}{}
+class Class(object): pass
+
+>>> c = Class()
+>>> c.attr = 'some'
+>>> print c.__dict__
+{'attr': 'some'}
+>>> print Class.__dict__
+{'__dict__': <attribute '__dict__' of 'Class' objects>,
+ '__module__': '__main__',
+ '__weakref__': <attribute '__weakref__' of 'Class' objects>,
+ '__doc__': None}
+
+class BaseA(object): pass
+class BaseB(object): pass
+class Child(BaseA, BaseB): pass
+
+# let's get some information about object's hierachy
+# and method resolution order
+
+>>> c = Child()
+>>> c.__class__
+<class '__main__.Child'>
+>>> c.__class__.__base__
+<class '__main__.BaseA'>
+>>> c.__class__.__bases__
+(<class '__main__.BaseA'>, <class '__main__.BaseB'>)
+>>> c.__class__.__mro__
+(<class '__main__.Child'>,
+ <class '__main__.BaseA'>,
+ <class '__main__.BaseB'>,
+ <type 'object'>)
+\end{pylst}
+
+Для более удобного получения информации о внутреннем устройстве различных объектов был введён модель \lstinline{inspect}.
+\begin{pylst}{}{}
+import inspect
+
+def f(a, b, c=3):
+    pass
+
+>>> inspect.getargspec(f)
+ArgSpec(args=['a', 'b', 'c'], varargs=None, keywords=None, defaults=(3,))
+\end{pylst}
