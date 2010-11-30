@@ -160,9 +160,120 @@ filter(function or None, sequence) -> list, tuple, or string
 \end{pylst}
 
 \subsubsection{Функция reduce}
+\lstinline{reduce} --- функция высшего порядка, которая делает свёртку последовательности, в результате чего получается, как правило, значение типа элемента последовательности. Функция свёртки обычно принимает три аргумента: комбинирующую функцию \lstinline{function}, начальное значение \lstinline{initial} и последовательность \lstinline{sequence}.
+\begin{pylst}{}{}
+reduce(function, sequence[, initial]) -> value
+\end{pylst}
+
+$4!$ можно вычислить следующим образом, используя функцию \lstinline{reduce}:
+\begin{pylst}{}{}
+>>> reduce(lambda res, x: res * x, range(2, 4 + 1), 1)
+24
+\end{pylst}
+
+Вычисление происходит следующим образом:
+\begin{center}
+  \begin{tikzpicture}[level/.style={sibling distance=50mm/#1}]
+    \node [circle, draw] {$*$}
+      child { node [circle, draw] {$*$}
+        child { node [circle, draw] {$*$} 
+          child { node [circle, draw] {$1$} }
+          child { node [circle, draw] {$2$} } }
+        child { node [circle, draw] {$3$} } }
+      child { node [circle, draw] {$4$} };
+  \end{tikzpicture}
+\end{center}
+
+Другая иллюстрация:
+\begin{pylst}{}{}
+(((1 * 2) * 3) * 4)
+\end{pylst}
+
 \subsection{Рекурсия}
+Хоть в Python и существует рекурсия, но в наиболее популярной реализации этого языка --- CPython --- она не православна, так как там нет оптимизации хвостовых вызовов (tail call optimization, TCO).
+
+Хвостовая рекурсия --- специальный случай рекурсии, при котором последней операцией, выполняемой рекурсивной функцией, является вызов самой себя. Подобный вид рекурсии примечателен тем, что может быть легко и автоматически заменён на итерацию, что и делают многие оптимизирующие компиляторы. Подобные рассуждения справедливы и для взаимно рекурсивных функций, хоть TCO для них в компиляторах встречается еще реже.
+
+\begin{pylst}{}{}
+def infinite():
+    infinite()
+
+# shortly somewhere in a far far away galaxy
+>>> infinite()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+...
+RuntimeError: maximum recursion depth exceeded
+\end{pylst}
+
+Получить и установить максимальное возможное количество рекурсивные вызовов можно с помощью функцией \lstinline{sys.getrecursionlimit} и \lstinline{sys.setrecursionlimit(limit)}.
+
 \subsection{Замыкания}
-\subsection{Частичное применение функций}
+Замыкание --- первоклассная функция со свободными переменными, которые связаны с определенными значениями в своем лексическом окружении. Свободная переменная --- переменная, которая встречается в теле функции, но которая не является параметром этой функции или локальной переменной.
+\begin{pylst}{}{}
+def make_adder(y):
+    def add(x):
+        return x + y
+    return add
+
+>>> add5 = make_adder(5)
+>>> add5(5)
+10
+>>> add5(7)
+12
+\end{pylst}
+
+Замыкание \lstinline{add} создается при каждом вызове функции \lstinline{make_adder}. Замыкании \lstinline{add} переменная \lstinline{y} является свободной переменной.
+
+Замыкания в Python также не доведены до логического конца, хоть в версиях $>=3.0$ уже такая претензия есть. В версии 3.0 введен оператор \lstinline{nonlocal}, суть которого видна из следующего примера:
+\begin{pylst}{}{}
+def make_counter():
+    count = 0
+    def get():
+        return count
+    def inc():
+        count += 1
+
+    return get, inc
+
+>>> get, inc = make_counter()
+>>> get()
+>>> 0
+>>> inc()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/tmp/py9637pml", line 11, in inc
+UnboundLocalError: local variable 'count' referenced before assignment
+
+def make_counter():
+    count = 0
+    def get():
+        nonlocal count
+        return count
+    def inc():
+        count += 1
+
+    return get, inc
+
+>>> get, inc = make_counter()
+>>> get()
+>>> 0
+>>> inc()
+>>> get()
+1
+\end{pylst}
+
+\subsection{Частичное применение функции}
+Частичное применение функции --- это преобразование функции от $n$ аргументов к функции от $n - m$ аргументов ($m < n$), в которой $m$ аргументов привязаны к определенным значениям. То есть некоторые аргументы изначальной функции фиксируются.
+
+Эта возможность предоставляется стандартной библиотекой Python:
+\begin{pylst}{}{}
+from functools import partial
+basetwo = partial(int, base=2)
+
+>>> basetwo('10010')
+18
+\end{pylst}
 
 \section{Декораторы}
 \label{sec:py-decorators}
