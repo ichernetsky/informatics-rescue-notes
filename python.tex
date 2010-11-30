@@ -1,6 +1,195 @@
 \chapter{Язык программирования Python}
 \label{ch:python}
 
+\section{Типы и структуры данных и операции над ними}
+\label{sec:py-types}
+Python --- динамически типизированный язык. Типы принадлежат объектам, не переменным. Переменные лишь связываются с объектами. Python --- строго типизированный язык. Все типы проверяются во время исполнения. Если обнаруживается какое-либо несоответствие типов, то возникает исключение \lstinline{TypeError}.
+
+Все объекты деляется на ссылочные и атомарные. При присваивании атомарных объектов они копируются, в то время как при присваивании ссылочных объекто копируюся только ссылки на них. Ссылочные объекты могут быть изменяемыми или неизменяемыми (mutable и immutable, соответственно).
+
+\subsection{NoneType}
+Единственным экземпляром этого типа является \lstinline{None}. Используется для обозначение того факта, что значения нет, например, ``функция ничего не возвращает''. С \lstinline{None} можно использовать операции сравнения и т.п.
+
+\subsection{Булев тип}
+\lstinline{False} -- ложное значение булева типа, а \lstinline{True} --- истинное значение.
+
+Любой объект может быть проверен на истинность (как все просто!) для использования в операторах \lstinline{if} и \lstinline{while}. Следующие значения считаются ложными:
+\begin{itemize}
+  \item \lstinline{None};
+  \item \lstinline{False};
+  \item нуль любого числового типа;
+  \item любая пустая последовательность;
+  \item любое пустое отображение (словарь);
+  \item экземпляр класса, определенного пользователем, если в классе определены \lstinline{__nonzero__()} или \lstinline{__len()} методы, и они возвращают нуль или \lstinline{False}.
+\end{itemize}
+
+Все остальные значения считаются истинными.
+
+\subsubsection{Булевы операции}
+\begin{center}
+  \begin{tabular}{lp{6cm}}
+    \toprule
+    Операция & Результат \\
+    \midrule
+    x or y & Если x истинен, то x, иначе y. \\
+    x and y & Если x истинен, то y, иначе x. \\
+    not x & Если x истинен, то False, иначе True. \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\subsection{Числовые типы}
+Четыре числовых типа: \lstinline{int}, \lstinline{long}, \lstinline{float} и \lstinline{complex}. \lstinline{int} соответсвует \lstinline{long} языка C. Для типа \lstinline{long} языка Python нет ограничений на размер числа. \lstinline{float} языка Python реализован с помощью типа \lstinline{double} языка C. Комплексные числа имеют действительную и мнимую составляющие, каждая из которые представлена \lstinline{double} языка C.
+
+\begin{pylst}{Работа с числовыми типами}{}
+>>> x, y = 5, 7
+>>> x + y, x / y, y % x
+12, 0, 2
+>>> x ** y ** 2
+17763568394002504646778106689453125L
+>>> abs(-x)
+5
+>>> x, y = 3.5, 23.3
+>>> round(x), y / x
+4.0, 6.6571428571428575
+>>> z = 1.3 + 0.5j
+>>> z.imag
+0.5
+\end{pylst}
+
+Python предоставляет все стандартные побитовые операции над целыми числами: \lstinline{|} (побитовое ИЛИ), \lstinline{^} (побитовое ИСКЛЮЧАЮЩЕЕ ИЛИ), \lstinline{&} (побитовое И), \lstinline{<<} (сдвиг влево), \lstinline{>>} (сдвиг вправо) и \lstinline{~} (побитовое НЕ).
+
+\subsection{Последовательности}
+Четыре типа последовательности: \lstinline{string} (строки), \lstinline{unicode} (юникодные строки), \lstinline{list} (списки), \lstinline{tuple} (кортежи).
+
+Все последовательности поддерживают следующие операции:
+\begin{center}
+  \begin{tabular}{lp{7.5cm}}
+    \toprule
+    Операция & Результат \\
+    \midrule
+    \texttt{x in s} & Истина, если какой-либо элемент из \texttt{s} равен \texttt{x} \\
+    \texttt{x not in s} & Истина, если ни один элемент из \texttt{s} не равен \texttt{s} \\
+    \texttt{s + t} & Сцепка \texttt{s} и \texttt{t} \\
+    \texttt{s * n} & Сцепка \texttt{s} с собой \texttt{n} раз \\
+    \texttt{s[i]} & Доступ по индексу \texttt{i} \\
+    \texttt{s[i:j]} & Срез от \texttt{i} до \texttt{j} \\
+    \texttt{s[i:j:k]} & Срез от \texttt{i} до \texttt{j} с шагом \texttt{k} \\
+    \texttt{len(s)} & Длина \texttt{s} \\
+    \texttt{min(s)} & Минимальный элемент в \texttt{s} \\
+    \texttt{max(s)} & Максимальный элемент в \texttt{s} \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\begin{pylst}{Работа с последовательностями}{}
+>>> s = 'not so long string '
+>>> 'l' in s, 'l' not in s
+True, False
+>>> s + '...'
+'not so long string ...'
+>>> s * 2
+'not so long string not so long string '
+>>> s[10], s[1:6], s[1:9:2]
+'g', 'ot so', 'o ol'
+>>> len(s)
+19
+\end{pylst}
+
+\subsubsection{Строки}
+Строка в Python --- неизменяемый тип данных. Все операции над последовательностями работают и со строками. Ниже проиллюстрированы часто употребляемые методы:
+\begin{pylst}{}{}
+>>> s = 'In the very beginning...'
+>>> s.count('in')
+2
+>>> s.startswith('in')
+False
+>>> ', '.join(['a', 'b', 'c'])
+'a, b, c'
+>>> s.upper()
+'IN THE VERY BEGINNING...'
+>>> s.partition(' ')
+('In', ' ', 'the very beginning...')
+>>> s.split(' ')
+['In', 'the', 'very', 'beginning...']
+>>> '%s there was actually nothing' % s
+'In the very beginning... there was actually nothing'
+\end{pylst}
+
+Строковые литералы могут быть трёх видов:
+\begin{itemize}
+  \item \lstinline{'string'} или \lstinline{"string"}.
+  \item \lstinline{'''string'''} или \lstinline{"""string"""}. Может занимать несколько строк.
+  \item \lstinline{r'string'} или \lstinline{r"string"}. Специальные символы не надо экранировать.
+\end{itemize}
+
+\subsubsection{Списки}
+Список в Python --- изменяемая структура данных. Все операции над последовательностями применимы и к спискам. В таблице~\ref{tbl:py-listops} приведены некоторые операции, специфичные для списков.
+\begin{table}[h!]
+  \begin{center}
+    \caption{Дополнительные операции над списками\label{tbl:py-listops}}
+    \begin{tabular}{lp{9cm}}
+      \toprule
+      Операция & Результат \\
+      \midrule
+      \texttt{s[i] = x} & Замещает элемент на позиции \texttt{i} переменной \texttt{x} \\
+      \texttt{s[i:j] = t} & Срез от \texttt{i} до \texttt{j} замещается содержимым итератора \texttt{t} \\
+      \texttt{del s[i:j]} & То же, что и \texttt{s[i:j] = []} \\
+      \texttt{s[i:j:k] = t} & Элементы \texttt{s[i:j:k]} замещаются содержимым \texttt{t} \\
+      \texttt{del s[i:j:k]} & Удаляет элементы \texttt{s[i:j:k]} из списка \\
+      \texttt{s.append(x)} & Добавляет элемент в конец списка \\
+      \texttt{s.extend(x)} & То же самое, что и \texttt{s[len(s):len(s)] = x} \\
+      \texttt{s.insert(i, x)} & То же самое, что и \texttt{s[i:i] = [x]} \\
+      \texttt{s.pop([i])} & То же самое, что и \texttt{x = s[i]; del s[i]; return x} \\
+      \texttt{s.remove(x)} & То же самое, что и \texttt{del s[s.index(x)]} \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\subsubsection{Кортежи}
+Кортеж --- это неизменяемая последовательность элементов. Нельзя ни удалять элементы из кортежа, ни добавлять, ни изменять. Примеры создания кортежей:
+\begin{pylst}{}{}
+>>> tuple([1, 2, 3])
+(1, 2, 3)
+>>> ('a', 'b', 'c')
+\end{pylst}
+
+\subsection{Словари}
+Словарь --- изменяемая структура данных. Он отображает хешируемые значения на любые объекты.
+\begin{pylst}{Примеры создания словаря}{}
+dict(one=2, two=3)
+dict({'one': 2, 'two': 3})
+dict(zip(('one', 'two'), (2, 3)))
+dict([['two', 3], ['one', 2]])
+\end{pylst}
+
+Некоторые операции над словарём \texttt{d}:
+\begin{itemize}
+  \item \lstinline{d[key]}. Возвращает объект, ассоциированный с ключом \lstinline{key}. Если такового нет --- \lstinline{KeyError}.
+  \item \lstinline{d[key] = value}. Ассоциирует объект \lstinline{value} с ключом \lstinline{key}.
+  \item \lstinline{del d[key]}. Удаляет объект, ассоциированный с ключом \lstinline{key}.
+  \item \lstinline{key in d}. \lstinline{True}, если \lstinline{d} имеет ключ \lstinline{key}.
+  \item \lstinline{key not in d}. Обратно.
+  \item \lstinline{iter(d)}. Возвращает итератор по ключам словаря.
+  \item \lstinline{clear()}. Удаляет все элементы из словаря.
+  \item \lstinline{items()}. Возвращает список пар вида \lstinline{(key, value)}.
+  \item \lstinline{iteritems()}. Возвращает итератор по \lstinline{items()}.
+  \item \lstinline{iterkeys()}. Возвращает итератор по ключам.
+  \item \lstinline{itervalues()}. Возвращает итератор по ассоциированным объектам.
+  \item \lstinline{keys()}. Список всех ключей.
+  \item \lstinline{values()}. Список ассоциированных объектов.
+  \item \lstinline{update([other])}. Обновляет словарь элементами словаря \lstinline{other}.
+\end{itemize}
+
+\subsection{Множества}
+Очень похожи на математические множества. Поддерживает операции объединения, пересечения, вычитания и различные проверки. Некоторые операции:
+\begin{itemize}
+  \item \lstinline{isdisjoint(other)}. Возвращает \lstinline{True}, если множества не имею одинаковых элементов.
+  \item \lstinline{issubset(other)} или \lstinline{set <= other}. Проверяет, все ли элементы первого множества присутствуют во втором.
+  \item \lstinline{issuperset(other)} или \lstinline{set >= other}. По аналогии.
+\end{itemize}
+
 \section{Операторы}
 \label{sec:py-statements}
 
