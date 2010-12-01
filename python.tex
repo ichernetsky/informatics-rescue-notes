@@ -603,6 +603,57 @@ def infinite(i):
 5
 \end{pylst}
 
+С помощью генераторов можно реализовать, например, координатор сопрограмм (coroutines). Сопрограмма --- компонент программы, обобщающий понятие подпрограммы, который дополнительно поддерживает множество входных точек и остановку и продолжение выполнения.
+\begin{pylst}{}{}
+import collections
+import types
+
+class Trampoline(object):
+    def __init__(self):
+        self.running = False
+        self.queue = collections.deque()
+
+    def add(self, coroutine):
+        self.schedule(coroutine)
+
+    def run(self):
+        result = None
+        self.running = True
+        try:
+            while self.running and self.queue:
+                func = self.queue.popleft()
+                return func()
+            return result
+        finally:
+            self.running = False
+
+    def stop(self):
+        self.running = False
+
+    def schedule(self, coroutine, stack=(), value=None, *exc):
+        def resume():
+            try:
+                if exc:
+                    value = coroutine.throw(value, *exc)
+                else:
+                    value = coroutine.send(value)
+            except:
+                if stack:
+                    # send the error back to the co-caller
+                    self.schedule(stack[0], stack[1], *sys.exc_info())
+                else:
+                    # propogate it to the real caller
+                    raise
+
+            if isinstance(value, types.GeneratorType):
+                self.schedule(value, (coroutine, stack))
+            elif stack:
+                self.schedule(stack[0], stack[1], value)
+            # else: this co-routine has ended
+
+        self.queue.append(resume)
+\end{pylst}
+
 \subsubsection{Генераторные выражения}
 Генераторное выражение --- выражение, которое возвращает итератор. Выглядит, как списковое включение, лишь с тем отличием, что вместо квадратных скобок используются круглые.
 \begin{pylst}{}{}
