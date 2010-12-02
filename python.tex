@@ -549,6 +549,134 @@ NameError: name 'two' is not defined
 
 Модули можно подгружать динамически, используя встроенную функцию \lstinline{__import__}.
 
+\section{Объектно-ориентированное программирование}
+\label{sec:py-oop}
+В Python всё --- объекты, и даже типы. Типы --- экземпляры \lstinline{type}. Python поддерживает множественное наследование и перегрузку операторов. Например, оператор \lstinline{+} можно перегрузить для объекта путём определения метода \lstinline{__add__}.
+
+Простое определение класса:
+\begin{pylst}{}{}
+class MyClass(object):
+    i = 12345
+    def __init__(self):
+        self.i = 54321
+    def f(self):
+        return self.i
+\end{pylst}
+
+Видно, что \lstinline{MyClass} отнаследован от класса \lstinline{object}. Если надо, чтобы объект наследовался от многих классов, то их надо записывать через запятую. В месте указания базовых классов может быть любое выражение, лишь бы результатом его вычисления был тип.
+\begin{pylst}{}{}
+def get_object():
+    return object
+
+class ExpChild(get_object()):
+    pass
+\end{pylst}
+
+Если в классе определена переменная, а в методах выполняется \lstinline{self.var = value}, то тем самым определяется переменная экземпляра, которая затеняет переменную класса с тем же именем.
+\begin{pylst}{}{}
+>>> c = MyClass()
+>>> c.i
+54321
+>>> MyClass.i
+12345
+\end{pylst}
+
+Инициализация --- и только! --- происходит в методе \lstinline{__init__()}. Если надо контролировать процесс создания объекта, то следует переопределять \lstinline{__new__(cls[, ...])}, как один из вариантов.
+\begin{pylst}{}{}
+class Complex(object):
+    def __init__(self, real, imag):
+        self.real = real
+        self.imag = imag
+
+>>> c = Complex(5.1, 3.0)
+>>> c.real, c.imag
+(5.1, 3.0)
+\end{pylst}
+
+Также можно определять свойства:
+\begin{pylst}{}{}
+class C(object):
+    x = 0
+    def getx(self):
+        return self._x
+    def setx(self, value):
+        self._x = value
+    def delx(self):
+        del self._x
+    x = property(getx, setx, delx, "I'm the 'x' property.")
+
+# another way
+
+class C(object):
+    x = 0
+    @property
+    def x(self):
+        return self._x
+    @x.setter
+    def x(self, value):
+        self._x = value
+    @x.deleter
+    def x(self):
+        del self._x
+\end{pylst}
+
+\lstinline{getx()} будет вызываться при выражении \lstinline{x = instance.x}, \lstinline{setx(value)} будет вызываться при выражении \lstinline{instance.x = x}, а \lstinline{delx()} --- при \lstinline{del instance.x}.
+
+Для вызовы методов базовых классов из какого-либо метода следует использовать встроенную функцию \lstinline{super(type[, object-or-type])}. Аттрибут \lstinline{__mro__} типа \lstinline{type} является списком типов, который определяет по каким типам и в каком порядке будет происходить поиск нужного метода при использовании функции \lstinline{super()}. \lstinline{__mro__} может изменяться, когда изменяется иерархия наследования.
+\begin{pylst}{}{}
+class A(object):
+    def f(self):
+        print 'A'
+
+class B(A):
+    def f(self):
+        print 'B'
+        super(B, self).f()
+
+class C(A):
+    def f(self):
+        print 'C'
+        super(C, self).f()
+
+class D(B, C):
+    def f(self):
+        print 'D'
+        super(D, self).f()
+
+>>> D.__mro__
+(<class '__main__.D'>,
+ <class '__main__.B'>,
+ <class '__main__.C'>,
+ <class '__main__.A'>,
+ <type 'object'>)
+
+>>> D().f()
+D
+B
+C
+A
+\end{pylst}
+
+То есть \lstinline{__mro__} содержит линеаризованный граф с уникальными элементами, чтобы ни один метод какого-либо базового класса не вызывался несколько раз, если переопределенный метод достижим по нескольким путям.
+
+Проверять отношения наследования функциями \lstinline{isinstance(object, class-or-type-or-tuple)} и \lstinline{issubclass(C, B)}.
+\begin{pylst}{}{}
+>>> issubclass(D, D), issubclass(D, A), isinstance(D(), A)
+(True, True, True)
+\end{pylst}
+
+Статические методы и методы класса определяются следующим образом:
+\begin{pylst}{}{}
+class MyClass(object):
+    @classmethod
+    def clsmethod(cls):
+        print cls, 'class'
+
+    @staticmethod
+    def statmethod()
+        print 'static'
+\end{pylst}
+
 \section{Итераторы и генераторы}
 \label{sec:py-iterators}
 
@@ -582,7 +710,7 @@ class counter(object):
 
 При вызове генератора возвращается итератор (технически, объект-генератор). Когда вызывается какой-либо метод итератора, начинается выполнение до первого встреченного оператора \lstinline{yield}, выполнение приостанавливается, запоминается точка возврата, и, наконец, возвращается значение при операторе \lstinline{yield}. При следующем вызове итератора выполнение начинается с точки останова. Так продолжается до тех пор, пока генератор не завершится любым отличным от оператора \lstinline{yield} способом (достигнет конца тела функции, при помощи оператора \lstinline{return}, исключительная ситуация).
 
-В объекте-генераторе определеные следующие методы:
+В объекте-генераторе определены следующие методы:
 \begin{itemize}
   \item \lstinline{next()}. Начинает выполнение функции-генераторы сначала или же вместе останова, если таковой присутствовал. Если выполнение начинается с точки останова, то текущий оператор \lstinline{yield} вычисляется в \lstinline{None}, и вычисление продолжается дальше. Если функция завершается не посредством \lstinline{yield}, то порождается исключение \lstinline{StopIteration}.
 
