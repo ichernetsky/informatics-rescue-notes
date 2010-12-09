@@ -1,3 +1,4 @@
+# LaTeX files
 *.aux
 *.log
 *.pdf
@@ -5,3 +6,11 @@
 *.nav
 *.out
 *.snm
+
+# C files
+*.o
+
+# OCaml files
+*.cmi
+*.cmo
+*.cmx
