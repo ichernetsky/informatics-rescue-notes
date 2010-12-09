@@ -22,4 +22,4 @@ all: .gitignore
 
 .PHONY: clean
 clean:
-	$(RM) .gitignore *.o $(PROGRAMS)
+	$(RM) *.o $(PROGRAMS)
