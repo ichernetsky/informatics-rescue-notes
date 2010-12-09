@@ -7,7 +7,7 @@
 \usepackage[svgnames,dvipsnames]{xcolor}
 
 \usepackage{tikz}
-\usetikzlibrary{arrows,backgrounds,calc,positioning}
+\usetikzlibrary{arrows,backgrounds,calc,positioning,trees}
 
 \usepackage{indentfirst}
 \usepackage{booktabs}
@@ -71,6 +71,11 @@
   {\lstset{style=pystyle,caption=#1,label=#2}}
   {}
 
+\lstdefinestyle{ocamlstyle}{language=[Objective]Caml,mathescape}
+\lstnewenvironment{ocamllst}[2]
+  {\lstset{style=ocamlstyle,caption=#1,label=#2}}
+  {}
+
 \title{Informatics Rescue}
 \author{Вадим Шендер, Иван Чернецкий}
 
@@ -83,4 +88,5 @@
 \input{concurrent.tex}
 \input{network.tex}
 \input{python.tex}
+\input{advanced-ds.tex}
 \end{document}
