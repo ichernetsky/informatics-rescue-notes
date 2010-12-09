@@ -1,9 +1,11 @@
 \chapter{Язык программирования Python}
 \label{ch:python}
 
+Чтобы попробовать Python, достаточно запустить REPL, введя в командной оболочке \texttt{python} (а ещё лучше \texttt{ipython}). Запуститься интерпретатор Python, ожидающий ввода. Можно вводить конструкции языка, и немедленно получать результат исполнения.
+
 \section{Типы и структуры данных и операции над ними}
 \label{sec:py-types}
-Python --- динамически типизированный язык. Типы принадлежат объектам, не переменным. Переменные лишь связываются с объектами. Python --- строго типизированный язык. Все типы проверяются во время исполнения. Если обнаруживается какое-либо несоответствие типов, то возникает исключение \lstinline{TypeError}.
+Python --- динамически типизированный язык. Типы принадлежат объектам, не переменным. Переменные лишь связываются с объектами. Python --- строго типизированный язык. Все типы проверяются во время исполнения. Если обнаруживается какое-либо несоответствие типов, то возникает исключение, как правило, \lstinline{TypeError} или \lstinline{AttributeError}.
 
 Все объекты деляется на ссылочные и атомарные. При присваивании атомарных объектов они копируются, в то время как при присваивании ссылочных объекто копируюся только ссылки на них. Ссылочные объекты могут быть изменяемыми или неизменяемыми (mutable и immutable, соответственно).
 
@@ -20,7 +22,7 @@ Python --- динамически типизированный язык. Тип�
   \item нуль любого числового типа;
   \item любая пустая последовательность;
   \item любое пустое отображение (словарь);
-  \item экземпляр класса, определенного пользователем, если в классе определены \lstinline{__nonzero__()} или \lstinline{__len()} методы, и они возвращают нуль или \lstinline{False}.
+  \item экземпляр класса, определенного пользователем, если в классе определены \lstinline{__nonzero__()} или \lstinline{__len__()} методы, и они возвращают нуль или \lstinline{False}.
 \end{itemize}
 
 Все остальные значения считаются истинными.
@@ -250,6 +252,28 @@ finally: suite
 Блок \lstinline{else} выполняется в том случае, если управление достигло конца блока \lstinline{try}. Исключения, возникшие в блоке \lstinline{else} не обрабатываются предыдущими ему обработчиками.
 
 Блок \lstinline{finally} выполняется всегда, где бы исключительная ситуация не возникла: внутри блок \lstinline{try}, \lstinline{except} или же \lstinline{else}.
+
+\subsubsection{Оператор with}
+Общая форма оператора \lstinline{with} выглядит следующим образом:
+\begin{pylst}{}{}
+with $expression$ [ as $target$ ]: $suite$
+\end{pylst}
+
+Схема работы следующая:
+\begin{enumerate}
+  \item $expression$ вычисляется.
+  \item Вызывается метод \lstinline{__enter__()} у результата вычисления $expression$.
+  \item Если использовалась форма \lstinline{as target}, то значение возвращенное из \lstinline{__enter__} присваивается $target$.
+  \item Исполняется $suite$.
+  \item Вызывается метод \lstinline{__exit__()}. Если возникло исключение при исполнении $suite$ и метод \lstinline{__exit__()} вернул \lstinline{False}, то исключение порождается вновь.
+\end{enumerate}
+
+\begin{pylst}{}{}
+import threading
+
+lock = threading.Lock()
+with lock: ...
+\end{pylst}
 
 \section{Функции}
 Ниже приведено тривиальное определение функции:
@@ -547,7 +571,8 @@ NameError: name 'two' is not defined
 
 Импорт может быть относительным. Точка перед модулем значит, что путь до модуля нужно искать от того модуля, где происходит импорт. Если две точки, то начинать надо с уровня выше. И так далее. Например, если импорт \lstinline{from . import mod} происходит из модуля в пакете \lstinline{pkg}, то импортирован будет модуль \lstinline{pkg.mod}. Если же импорт \lstinline{from ..subpkg2 import mod} --- из пакета \lstinline{pkg.subpkg1}, импортирован модуль \lstinline{pkg.subpkg2.mod}.
 
-Модули можно подгружать динамически, используя встроенную функцию \lstinline{__import__}.
+При выполненении \lstinline{from mod import *} не импортируются имена, которые начинаются с \lstinline{_}. Модули можно подгружать динамически, используя встроенную функцию \lstinline{__import__}.
+
 
 \section{Объектно-ориентированное программирование}
 \label{sec:py-oop}
@@ -677,6 +702,73 @@ class MyClass(object):
         print 'static'
 \end{pylst}
 
+В Python возможно использовать не-очень-приватные поля:
+\begin{pylst}{}{}
+class C(object):
+    def __init__(self):
+        self.__private = 1
+
+>>> c = C()
+>>> dir(c)
+['_C__private', '__class__', '__delattr__', '__dict__', '__doc__',
+ '__format__', '__getattribute__', '__hash__', '__init__',
+ '__module__', '__new__', '__reduce__', '__reduce_ex__',
+ '__repr__', '__setattr__', '__sizeof__', '__str__',
+ '__subclasshook__', '__weakref__']
+\end{pylst}
+
+То есть любое имя вида \lstinline{__*} внутри определения класса \lstinline{Class} преобразуется в \lstinline{_Class__*}.
+
+\subsection{Специальные методы}
+
+\subsubsection{Доступ к аттрибутам}
+\begin{itemize}
+  \item \lstinline{object.__getattr__(self, name)}. Вызывается, если аттрибут не найден обычном поиском. Должен вернуть имя аттрибута или же породить исключение \lstinline{AttributeError}.
+  \item \lstinline{object.__setattr__(self, name, value)}. Вызывается всегда для установки значения \lstinline{value} аттрибуту с именем \lstinline{name}.
+  \item \lstinline{object.__delattr__(self, name)}.
+  \item \lstinline{object.__getattribute__(self, name)}. Вызывается всегда. Если порождает исключение \lstinline{AttributeError}, вызывается метод \lstinline{object.__getattr__(self, name)}.
+\end{itemize}
+
+\subsubsection{Реализация протокола дескриптора}
+\begin{itemize}
+  \item \lstinline{object.__get__(self, instance, owner)}
+  \item \lstinline{object.__set__(self, instance, value)}
+  \item \lstinline{object.__delete__(self, instance)}
+\end{itemize}
+
+Дескриптор --- это объект, который реализует хотя бы один из вышеперечисленных методов. Если у объекта \lstinline{obj} есть аттрибут \lstinline{d}, который в свою очередь есть дескриптор, то код \lstinline{obj.d} эквивалентен коду \lstinline{type(obj).__dict__['x'].__get__(obj, type(obj))}.
+
+\begin{pylst}{Пример дескриптора}{}
+import random
+
+class Die(object):
+    def __init__(self, sides=6):
+        self.sides = sides
+
+    def __get__(self, instance, owner):
+        return int(random.random() * self.sides) + 1
+
+class Game(object):
+    d6 = Die()
+    d10 = Die(sides=10)
+    d20 = Die(sides=20)
+
+>>> Game.d6
+5
+>>> Game.d10
+8
+>>> Game.d20
+19
+>>> Game.d20
+3
+\end{pylst}
+
+\subsubsection{Настройка проверок экземпляров и подклассов}
+\begin{itemize}
+  \item \lstinline{class.__instancecheck__(self, instance)}. Возвращает \lstinline{True}, если \lstinline{instance} должен рассматриваться как экземпляр класса.
+  \item \lstinline{class.__subclasscheck__(self, subclass)}. Возвращает \lstinline{True}, если \lstinline{subclass} должен рассматриваться как потомок класса.
+\end{itemize}
+
 \section{Итераторы и генераторы}
 \label{sec:py-iterators}
 
@@ -732,8 +824,9 @@ def infinite(i):
 \end{pylst}
 
 С помощью генераторов можно реализовать, например, координатор сопрограмм (coroutines). Сопрограмма --- компонент программы, обобщающий понятие подпрограммы, который дополнительно поддерживает множество входных точек и остановку и продолжение выполнения.
-\begin{pylst}{}{}
+\begin{pylst}{Из PEP 342}{}
 import collections
+import sys
 import types
 
 class Trampoline(object):
@@ -758,13 +851,13 @@ class Trampoline(object):
     def stop(self):
         self.running = False
 
-    def schedule(self, coroutine, stack=(), value=None, *exc):
+    def schedule(self, coroutine, stack=(), val=None, *exc):
         def resume():
             try:
                 if exc:
-                    value = coroutine.throw(value, *exc)
+                    value = coroutine.throw(val, *exc)
                 else:
-                    value = coroutine.send(value)
+                    value = coroutine.send(val)
             except:
                 if stack:
                     # send the error back to the co-caller
@@ -774,12 +867,51 @@ class Trampoline(object):
                     raise
 
             if isinstance(value, types.GeneratorType):
+                # push the new coroutine and call the new one
                 self.schedule(value, (coroutine, stack))
             elif stack:
+                # got a result, pop the stack and send the result
+                # to the caller
                 self.schedule(stack[0], stack[1], value)
             # else: this co-routine has ended
 
         self.queue.append(resume)
+
+# simple echo server giving that we have non-blocking operations
+
+# coroutine function that echos data back on a connected socket
+def echo_handler(sock):
+    while True:
+        try:
+            data = yield nonblocking_read(sock)
+            yield nonblocking_write(sock, data)
+        except ConnectionLost:
+            pass  # exit normally if connection lost
+
+# coroutine function that listens for connections on a
+# socket, and then launches a service "handler" coroutine
+# to service the connection
+def listen_on(trampoline, sock, handler):
+    while True:
+        # get the next incoming connection
+        connected_socket = yield nonblocking_accept(sock)
+
+        # start another coroutine to handle the connection
+        trampoline.add(handler(connected_socket))
+
+# Create a scheduler to manage all our coroutines
+trampoline = Trampoline()
+
+# Create a coroutine instance to run the echo_handler on
+# incoming connections
+
+# Add the coroutine to the scheduler
+trampoline.add(listen_on(trampoline,
+                         listening_socket("localhost", "echo"),
+                         echo_handler))
+
+# loop forever, accepting connections and servicing them
+trampoline.run()
 \end{pylst}
 
 \subsubsection{Генераторные выражения}
