@@ -4,7 +4,8 @@ TOUCH = touch
 OCAML = ocamlc
 OFLAGS = -thread -package batteries -linkpkg
 
-PROGRAMS = trie
+PROGRAMS = trie \
+	   bloom
 
 .PHONY: all
 all: $(PROGRAMS)
