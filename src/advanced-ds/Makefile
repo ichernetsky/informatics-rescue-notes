@@ -5,7 +5,8 @@ OCAML = ocamlc
 OFLAGS = -thread -package batteries -linkpkg
 
 PROGRAMS = trie \
-	   bloom
+	   bloom \
+	   rbtree
 
 .PHONY: all
 all: $(PROGRAMS)
