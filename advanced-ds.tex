@@ -1,6 +1,78 @@
 \chapter{Сложные структуры данных}
 \label{ch:advanced-ds}
 
+\section{Красно-чёрные деревья}
+\label{sec:rb-tree}
+Красно-чёрное дерево представляет собой бинарное дерево поиска с одним дополнительным битом \emph{цвета}. Цвет узла может быть либо красным, либо чёрным. В соответствии с накладываемыми на узлы дерева ограничениями, ни один путь в красно-чёрном дереве не отличается от другого по длине более чем в два раза, что делает его сбалансированным. Вот эти ограничения:
+\begin{enumerate}
+  \item Корень дерева является чёрным.
+  \item Красный узел может быть потомком только чёрного узла.
+  \item Все пути от корня к пустым узлам содержат одинаковое количество чёрных узлов.
+  \item Пустой узел — чёрный.
+\end{enumerate}
+
+\subsection{Реализация}
+При вставке нового узла в дерево может возникнуть одна из четырёх ситуаций, представленных на рисунке, когда красный узел является потомком тоже красного узла. На этом же рисунке показаны необходимые преобразования, чтобы дерево вновь стало сбалансированным.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}[red/.style={circle,draw},
+                      black/.style={circle,draw,fill=gray},
+                      level distance=1cm,
+                      font=\footnotesize]
+    \node [black] at (0,0) {$z$}
+      child { node [red] {$x$}
+        child { node [] {$a$} }
+        child { node [red] {$y$}
+          child { node [] {$b$} }
+          child { node [] {$c$} } } }
+      child { node [] {$d$} };
+
+    \node [black] at (-4,-4.5) {$z$}
+      child { node [red] {$y$}
+        child { node [red] {$x$}
+          child { node [] {$a$} }
+          child { node [] {$b$} } }
+        child { node [] {$c$} } }
+      child { node [] {$d$} };
+
+    \node [black] at (4,-4.5) {$x$}
+      child { node [] {$a$} }
+      child { node [red] {$y$}
+        child { node [] {$b$} }
+        child { node [red] {$z$}
+          child { node [] {$c$} }
+          child { node [] {$d$} } } };
+
+    \node [black] at (0,-8.5) {$x$}
+      child { node [] {$a$} }
+      child { node [red] {$z$}
+        child { node [red] {$y$}
+          child { node [] {$b$} }
+          child { node [] {$c$} } }
+        child { node [] {$d$} } };
+
+
+    \begin{scope}[level/.style={sibling distance=11mm/#1}]
+      \node [red] at (0,-4.5) {$y$}
+        child { node [black] {$x$}
+          child { node [] {$a$} }
+          child { node [] {$b$} } }
+        child { node [black] {$z$}
+          child { node [] {$c$} }
+          child { node [] {$d$} } };
+    \end{scope}
+
+    \draw [->,thick] (-2.5,-5.5) -- (-1.5,-5.5);
+    \draw [->,thick] (2.5,-5.5) -- (1.5,-5.5);
+    \draw [->,thick] (0,-3.2) -- (0,-4);
+    \draw [->,thick] (0,-7.8) -- (0,-7);
+  \end{tikzpicture}
+  \caption{Балансировка дерева}
+\end{figure}
+
+\lstinputlisting[style=ocamlstyle,caption=Реализация красно-чёрного дерева]{src/advanced-ds/rbtree.ml}
+
 \section{Префиксные деревья}
 \label{sec:trie}
 Префиксное дерево (trie) — структура данных, позволяющая хранить ассоциативный массив, ключами которого являются, как правило, строки. В отличие от двоичных деревьев поиска не обязательно хранить ключ в узлах дерева, так как в префиксном дереве по позиции узла можно вычислить ключ, ассоциированный с ним. Все потомки узла имеют общий префикс, представленный этим самым узлом.
