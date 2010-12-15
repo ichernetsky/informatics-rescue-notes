@@ -1,23 +1,21 @@
 open Batteries
 
-type 'a bloom_filter = { hash_funcs : ('a -> int) list;
+type 'a bloom_filter = { hashers : ('a -> int) list;
                          bitset : BitSet.t;
                          size: int }
 
-let make hash_funcs size =  { hash_funcs = hash_funcs;
-                              bitset = BitSet.create size;
-                              size = size }
+let create hashers size =  { hashers = hashers;
+                             bitset = BitSet.create size;
+                             size = size }
 
-let present bfilter value =
-  let present_one hash_func =
-    let position = (hash_func value) mod bfilter.size in
-    BitSet.is_set bfilter.bitset position
-  in
-  List.for_all present_one bfilter.hash_funcs
+let mem value bloom =
+  let mem' hasher =
+    let pos = (hasher value) mod bloom.size in
+    BitSet.is_set bloom.bitset pos
+  in List.for_all mem' bloom.hashers
 
-let insert bfilter value =
+let insert value bloom =
   let positions =
-    List.map (fun hash_func -> (hash_func value) mod bfilter.size)
-      bfilter.hash_funcs
-  in
-  List.iter (fun position -> BitSet.set bfilter.bitset position ) positions
+    List.map (fun hasher -> (hasher value) mod bloom.size)
+      bloom.hashers
+  in List.iter (fun pos -> BitSet.set bloom.bitset pos) positions

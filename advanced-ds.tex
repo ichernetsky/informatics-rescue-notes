@@ -202,23 +202,23 @@ f = e^{k\ln(1 - e^{-nk / m})}.
 \lstinputlisting[style=ocamlstyle]{src/advanced-ds/bloom.ml}
 
 \begin{ocamllst}{Пример использования}{}
-# let mysize = 18
-# let hash_func1 = Hashtbl.hash
-# let hash_func2 x = abs ((Hashtbl.hash x) + (mysize / 2))
-# let bfilter = make [hash_func1; hash_func2] mysize ;;
-value bfilter : bloom_filter '_a =
-  {hash_funcs=[<fun>; <fun>]; bitset=<abstr>; size=18}
+# let size = 18
+# let hasher' = Hashtbl.hash
+# let hasher'' x = abs ((Hashtbl.hash x) + (size / 2))
+# let bloom = create [hasher'; hasher''] size
+value bloom : bloom_filter '_a =
+  {hashers=[<fun>; <fun>]; bitset=<abstr>; size=18}
 
-# insert bfilter "foo" ;;
-# BitSet.print stdout bfilter.bitset; print_newline () ;;
+# insert "foo" bloom ;;
+# BitSet.print stdout bloom.bitset; print_newline () ;;
 100000000100000000000000
 
-# insert bfilter "bar" ;;
-# BitSet.print stdout bfilter.bitset; print_newline () ;;
+# insert "bar" bloom ;;
+# BitSet.print stdout bloom.bitset; print_newline () ;;
 100100000100100000000000
 
-# present bfilter "foo" ;;
+# mem "foo" bloom ;;
 - : bool = True
-# present bfilter "baz" ;;
+# mem "baz" bloom ;;
 - : bool = False
 \end{ocamllst}
