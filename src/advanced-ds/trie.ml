@@ -1,66 +1,50 @@
 open Batteries
-open List
 
-type 'a trie = { value : 'a option;
-                 children : (char * 'a trie) list }
+type ('a, 'b) trie = { value    : 'a option;
+                       children : ('b, ('a, 'b) trie) Map.t }
 
-let make_node value children =
-  { value = value; children = children }
+let empty = { value = None; children = Map.empty }
 
-let make_empty_node () = make_node None []
-let make_root () = make_empty_node ()
+let rec find key trie = match key with
+  | []           -> trie.value
+  | head :: rest ->
+    if Map.mem head trie.children then
+      let next = Map.find head trie.children in
+      find rest next
+    else None
 
-let lookup pairs key =
-  try Some (assoc key pairs) with
-    | Not_found -> None
+let mem key trie = match find key trie with
+  | None -> false
+  | Some _ -> true
 
-let find trie key =
-  let rec find' trie key =
-    match key with
-      | [] -> trie.value
-      | letter :: rest ->
-        match lookup trie.children letter with
-          | None -> None
-          | Some trie' -> find' trie' rest in
-  find' trie (String.to_list key)
+let rec insert key value trie = match key with
+  | [] -> {trie with value = Some value}
+  | head :: rest ->
+    if Map.mem head trie.children then
+      let node = Map.find head trie.children in
+      let node = insert rest value node in
+      {trie with children = Map.add head node trie.children}
+    else
+      let node = insert rest value empty in
+      {trie with children = Map.add head node trie.children}
 
-let exists trie key =
-  match find trie key with
-    | None -> false
-    | Some _ -> true
-
-let insert trie key value =
-  let rec insert' trie key =
-    match key with
-      | [] -> {trie with value = Some value}
-      | letter :: rest ->
-        match lookup trie.children letter with
-          | None ->
-            let node = make_empty_node () in
-            {trie with children = (letter, insert' node rest) :: trie.children}
-          | Some trie' ->
-            let filtered = filter (fun pair -> (fst pair) <> letter) trie.children in
-            {trie with children = (letter, insert' trie' rest) :: filtered}
-  in
-  insert' trie (String.to_list key)
-
-let remove trie key =
-  let rec remove' trie key =
-    match key, trie.value, trie.children with
-      | [], _, [] -> None
-      | [], _, _ -> Some {trie with value = None}
-      | letter :: rest, value, children ->
-        match lookup children letter with
-          | None -> Some trie
-          | Some trie' ->
-            let filtered = filter (fun pair -> (fst pair) <> letter) children in
-            match remove' trie' rest with
-              | None ->
-                (match value, filtered with
-                  | None, [] -> None
-                  | _ -> Some {trie with children = filtered})
-              | Some trie'' -> Some {trie with children = (letter, trie'') :: filtered}
-  in
-  match remove' trie (String.to_list key) with
-    | None -> make_root ()
-    | Some root -> root
+let remove key trie =
+  let rec remove' key trie =
+    match key, Map.is_empty trie.children with
+      | [], true  -> None
+      | [], false -> Some {trie with value = None}
+      | head :: rest, _ ->
+        if Map.mem head trie.children then
+          let next = Map.find head trie.children in
+          let filtered = Map.remove head trie.children in
+          match remove' rest next with
+            | None ->
+              (match trie.value, Map.is_empty filtered with
+                | None, true -> None
+                | _ -> Some {trie with children = filtered})
+            | Some result ->
+              Some {trie with children = Map.add head result filtered}
+        else Some trie
+  in match remove' key trie with
+    | None -> empty
+    | Some trie -> trie

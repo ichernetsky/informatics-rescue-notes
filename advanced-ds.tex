@@ -128,40 +128,25 @@
 \lstinputlisting[style=ocamlstyle,caption=Реализация префиксного дерева]{src/advanced-ds/trie.ml}
 
 \begin{ocamllst}{Пример использования}{}
-# let root = make_root ()
-# let root = insert root "tea" "tea"
-# let root = insert root "ted" "ted"
-# let root = insert root "ten" "ten"
-# let root = insert root "inn" "inn"
-# let root = insert root "te" "te"
-# let root = insert root "" "" ;;
+# let root = empty
+# let root = insert (String.to_list "tea") "tea" root
+# let root = insert (String.to_list "ted") "ted" root
+# let root = insert (String.to_list "ten") "ten" root
+# let root = insert (String.to_list "inn") "inn" root
+# let root = insert (String.to_list "te") "te" root
+# let root = insert (String.to_list "") "" root ;;
+value root : trie string char = {value=Some ""; children=<abstr>}
 
-value root : trie string =
-  {value=Some "";
-   children=
-    [('t',
-     {value=None;
-      children=
-       [('e',
-        {value=Some "te";
-         children=
-          [('n', {value=Some "ten"; children=[]});
-           ('d', {value=Some "ted"; children=[]});
-           ('a', {value=Some "tea"; children=[]})]})]});
-     ('i',
-     {value=None;
-      children=
-       [('n',
-        {value=None; children=[('n', {value=Some "inn"; children=[]})]})]})]}
+# let root = remove (String.to_list "") root
+# let root = remove (String.to_list "te") root
+# let root = remove (String.to_list "inn") root
+# let root = remove (String.to_list "ten") root
+# let root = remove (String.to_list "ted") root
+# let root = remove (String.to_list "tea") root ;;
+value root : trie string char = {value=None; children=<abstr>}
 
-# let root = remove root ""
-# let root = remove root "te"
-# let root = remove root "inn"
-# let root = remove root "ten"
-# let root = remove root "ted"
-# let root = remove root "tea" ;;
-
-value root : trie string = {value=None; children=[]}
+# Map.is_empty root.children ;;
+- : bool = True
 \end{ocamllst}
 
 \section{Фильтр Блума}
