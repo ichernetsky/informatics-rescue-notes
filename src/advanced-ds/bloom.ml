@@ -15,7 +15,9 @@ let mem value bloom =
   in List.for_all mem' bloom.hashers
 
 let insert value bloom =
-  let positions =
-    List.map (fun hasher -> (hasher value) mod bloom.size)
-      bloom.hashers
-  in List.iter (fun pos -> BitSet.set bloom.bitset pos) positions
+  let bloom = {bloom with bitset = BitSet.copy bloom.bitset}
+  and positions =
+    List.map (fun h -> (h value) mod bloom.size)
+      bloom.hashers in
+  List.iter (fun p -> BitSet.set bloom.bitset p) positions;
+  bloom

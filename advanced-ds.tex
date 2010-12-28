@@ -209,11 +209,11 @@ f = e^{k\ln(1 - e^{-nk / m})}.
 value bloom : bloom_filter '_a =
   {hashers=[<fun>; <fun>]; bitset=<abstr>; size=18}
 
-# insert "foo" bloom ;;
+# let bloom = insert "foo" bloom ;;
 # BitSet.print stdout bloom.bitset; print_newline () ;;
 100000000100000000000000
 
-# insert "bar" bloom ;;
+# let bloom = insert "bar" bloom ;;
 # BitSet.print stdout bloom.bitset; print_newline () ;;
 100100000100100000000000
 
