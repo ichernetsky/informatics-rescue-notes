@@ -6,7 +6,8 @@ OFLAGS = -thread -package batteries -linkpkg
 
 PROGRAMS = trie \
 	   bloom \
-	   rbtree
+	   rbtree \
+	   btree
 
 .PHONY: all
 all: $(PROGRAMS)
