@@ -6,6 +6,11 @@
 *.nav
 *.out
 *.snm
+*.bbl
+*.blg
+*.idx
+*.ilg
+*.ind
 
 # C files
 *.o
