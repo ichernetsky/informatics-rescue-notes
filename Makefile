@@ -21,6 +21,8 @@ notes: $(PDFNAME)
 
 $(PDFNAME): $(TEXNAMES)
 	$(PDFLATEX) $(NAME)
+	makeindex $(NAME)
+	$(PDFLATEX) $(NAME)
 	while grep 'Label(s) may have changed' $(LOGNAME) > /dev/null 2>&1 ; do \
 		$(PDFLATEX) $(NAME) ; \
         done
@@ -31,5 +33,5 @@ slides:
 
 .PHONY: clean
 clean:
-	$(RM) *~ \#* *.aux *.toc $(NAME)*.pdf *.log *.out
+	$(RM) *~ \#* *.aux *.toc $(NAME)*.pdf *.log *.out *.bbl *.blg *.idx *.ilg *.ind
 	$(CD) slides && $(MAKE) clean
