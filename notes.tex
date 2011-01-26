@@ -79,6 +79,11 @@
   {\lstset{style=ocamlstyle,caption=#1,label=#2}}
   {}
 
+\lstdefinestyle{clstyle}{language=Lisp,mathescape}
+\lstnewenvironment{cllst}[2]
+  {\lstset{style=clstyle,caption=#1,label=#2}}
+  {}
+
 \title{Informatics Rescue}
 \author{Вадим Шендер, Иван Чернецкий}
 
@@ -88,8 +93,10 @@
 \tableofcontents{}
 
 \input{basic-ds.tex}
-\input{concurrent.tex}
+%\input{concurrent.tex}
 \input{network.tex}
 \input{python.tex}
 \input{advanced-ds.tex}
+%\input{cl.tex}
+
 \end{document}
