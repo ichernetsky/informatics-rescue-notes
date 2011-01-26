@@ -177,7 +177,7 @@ NIL
 (apply #'plot #'exp '(0 4 1/2))
 \end{cllst}
 
-\subsection{Анонимные функцийй}
+\subsection{Анонимные функции}
 Анонимные функции определяются с помощью \lstinline{LAMBDA}.
 \begin{cllst}{}{}
 (lambda (parameters) body)
@@ -185,3 +185,147 @@ NIL
 (funcall #'(lambda (x y) (+ x y)) 2 3) => 5
 ((lambda (x y) (+ x y)) 2 3)           => 5
 \end{cllst}
+
+\section{Переменные}
+CL поддерживает два вида переменных: \emph{лексические} и \emph{динамические} (\emph{специальные}).
+
+В CL переменные не типизированы. Переменная может содержать значения любого типа, а сами значения содержат информацию о типе, которая может быть использована для проверки типов во время выполнения.
+
+Одной из форм, позволяющих вводить новые переменные, является \lstinline{LET}. Эта форма имеет следующий вид:
+\begin{cllst}{}{}
+(let (variable*)
+  body-form*)
+\end{cllst}
+где каждая \lstinline{variable} является либо списком, состоящим из имени переменной и начального значения, либо просто именем переменной (в таком случае значение переменной равно \lstinline{NIL}).
+\begin{cllst}{}{}
+(let ((x 10) (y 20) z)
+  (list x y z))         => (10 20 NIL)
+\end{cllst}
+
+Сначала вычисляются все выражения, результаты которых будут использоваться в качестве начальных значений. Затем создаются и инициализируются в начальные значения переменные. После чего выполняются формы из \lstinline{body-form*}.
+\begin{cllst}{}{}
+(defun foo (x)
+  (format t "Parameter: ~a~%" x)
+  (let ((x 2))
+    (format t "External LET: ~a~%" x)
+    (let ((x 3))
+      (format t "Internal LET: ~a~%" x))
+    (format t "External LET: ~a~%" x))
+  (format t "Parameter: ~a~%" x))
+
+CL-USER> (foo 1)
+Parameter: 1
+External LET: 2
+Internal LET: 3
+External LET: 2
+Parameter: 1
+NIL
+\end{cllst}
+
+Ещё одной связывающей формой является вариант \lstinline{LET}: \lstinline{LET*}. Различие состоит в том, что в \lstinline{LET} имена переменных могут быть использованы только в теле \lstinline{LET}, а в \lstinline{LET*} формы начальных значений могут ссылаться на переменные, введенные ранее.
+
+\subsection{Замыкания и лексические переменные}
+
+\begin{cllst}{}{}
+(let ((count 0))
+  (list
+   #'(lambda () (incf count))
+   #'(lambda () (decf count))
+   #'(lambda () count)))
+
+
+(funcall (first *count-fns*))  => 1
+(funcall (first *count-fns*))  => 2
+(funcall (second *count-fns*)) => 1
+(funcall (third *count-fns*))  => 1
+\end{cllst}
+
+Анонимная функция называется \emph{замыканием (closure)}, потому что она замыкается вокруг привязки, созданной \lstinline{LET}. В замыканиях захватывается не значение переменной, а привязка. Поэтому замыкание может не только иметь доступ ко значению переменной, вокруг которой оно замкнуто, но и присваивать ей новые значения.
+
+\subsection{Динамические (специальные) переменные}
+CL предоставляет два способа создания динамических переменных: \lstinline{DEFVAR} и \lstinline{DEFPARAMETER}. Единственное отличие в том, что \lstinline{DEFVAR} не изменит значение уже определенной переменной, а \lstinline{DEFPARAMETER} — изменит. Обе формы принимают имя переменной, начальное значение и необязательную строку документации.
+
+Принято, что имена динамических переменных начинаются и заканчиваются ``звёздочкой''.
+\begin{cllst}{}{}
+(defvar *count* 0 "Number of created widgets so far.")
+*count* => 0
+(defvar *count* 1)
+*count* => 0
+
+(defparameter *count* 2)
+*count* => 2
+\end{cllst}
+
+Форма \lstinline{DEFVAR} может использоваться без начального значения для определения переменной без значения. Такая переменная называется \emph{несвязанной (unbound)}.
+
+Присваивание нового значения динамической переменной в какой-либо связывающей форме приводит к тому, что весь код, который находится в теле этой связывающей форме, и код, который вызывается из кода в теле, будет видеть новое значение динамической переменной (отсюда и название).
+\begin{cllst}{}{}
+(defun hello-world ()
+  (format *standard-output* "Hello, world!~%"))
+
+CL-USER> (hello-world)
+Hello, world!
+NIL
+
+(with-open-file (stream #p"/tmp/scream.txt" :direction :output)
+  (let ((*standard-output* stream))
+    (hello-world)))
+
+CL-USER> (hello-world)
+Hello, world!
+NIL
+\end{cllst}
+
+В итоге \texttt{/tmp/scream.txt} содержит:
+\begin{plainlst}{}{}
+% cat scream.txt 
+Hello, world!
+\end{plainlst}
+
+Также возможно локально объявить имя динамическим (специальным). Если в связывающей форме объявить имя специальным, то привязка, созданная для этой переменной, будет динамической, а не лексической. Другой код может локально определить имя специальным, чтобы обращаться к динамической привязке.
+
+\subsection{Константы}
+Все константы являются глобальными и определяются с помощью \lstinline{DEFCONSTANT}. Базовая форма \lstinline{DEFCONSTANT} подобна \lstinline{DEFPARAMETER}.
+\begin{cllst}{}{}
+(defconstant name initial-value-form [ documentation-string ])
+\end{cllst}
+
+К константе можно только обращаться. При попытке изменить константу зависит от реализации.
+
+\subsection{Присваивание}
+Чтобы присвоить новое значение переменной, следует использовать макрос \lstinline{SETF}, являющийся в CL оператором присваивания:
+\begin{cllst}{}{}
+(setf place value)
+\end{cllst}
+
+\lstinline{SETF} раскрывается (expand) в зависимости от того, чем является \lstinline{place}. Когда \lstinline{place} является переменной, то он раскрывается в вызов специальной формы \lstinline{SETQ}, который имеет доступ как лексическим, так и к динамическим переменным. \lstinline{SETF} возвращает последнее присвоенное значение.
+\begin{cllst}{}{}
+(defvar *x*)
+(defvar *y*)
+
+(setf *x* 10) => 10
+(setf *x* 1 y 2) => 2
+(setf *x* (setf *y* (random 10))) => 6
+\end{cllst}
+
+\subsubsection{Обобщённое присваивание}
+Местом может быть не только привязки переменных. \lstinline{SETF} может присвоить значение любому месту (place). В CL можно присваивать, например, элементу списка.
+\begin{cllst}{}{}
+(let ((x 1))
+  (setf x 10)
+  x) => 10
+
+(let ((x '(2 2 3)))
+  (setf (first x) 1)
+  x) => (1 2 3)
+
+(let ((x #(2 2 3)))
+  (setf (aref x 0) 1)
+  x) => #(1 2 3)
+
+(let ((x (make-hash-table)))
+  (setf (gethash 'key x) 10)
+  (gethash 'key x)) => 10
+\end{cllst}
+
+Новые места можно определять с помощью \lstinline{DEFSETF} и \lstinline{DEFINE-SETF-EXPANDER}.
