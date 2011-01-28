@@ -432,3 +432,283 @@ s
 \begin{cllst}{}{}
 (string= "foobarbaz" "quuxbarfoo" :start1 3 :end1 6 :start2 4 :end2 7) => T
 \end{cllst}
+
+\section{Loop}
+\lstinline{LOOP} представляет собой встроенный проблемно-ориентированный язык (\emph{embedded domain-specific language, eDSL}) для описания итераций. Что он может:
+\begin{itemize}
+  \item описывать циклы со счётчиком и по различным структурам данных;
+  \item собирать, подсчитывать, суммировать, вычислять минимальное и максимальное значения по коллекциям;
+  \item выполнять выражения Lisp;
+  \item описывать условия останова;
+  \item выполнять определенные действия при заданных условиях;
+  \item создавать локальные переменные;
+  \item выполнять некоторые выражения до выполнения цикла и после него.
+\end{itemize}
+
+\subsection{Общий синтаксис и семантика}
+\lstinline{LOOP} состоит из предложений (\emph{clause}), которые начинают с одного из ключевых слов. Пример конструкции с шестью предложениями:
+\begin{cllst}{}{}
+(loop for i from 1 to 10
+   while (< i 7)
+   collect (* i i)
+   do (format t "Working on ~D now~%" i)
+   when (evenp i)
+     do (format t "~D is non-odd number~%" i)
+   finally (format t "About to exit...~%"))
+\end{cllst}
+\begin{plainlst}{}{}
+Working on 1 now
+Working on 2 now
+2 is non-odd number
+Working on 3 now
+Working on 4 now
+4 is non-odd number
+Working on 5 now
+Working on 6 now
+6 is non-odd number
+About to exit...
+\end{plainlst}
+
+Каждой ключевое слова вводит либо простое предложение, либо составное, состоящее из других предложений. Предложение может содержать вспомогательные ключевые слова, которые иногда именуются предлогами (\emph{prepositions}), например, \lstinline{from} и \lstinline{to}.
+
+\subsubsection{Порядок выполнения}
+Как правило, предложения выполняются по порядку. Цикл выполняется до тех пор, пока он не закончиться либо пока не будет выполнен явный возврат из него посредством \lstinline{return}, \lstinline{go} или \lstinline{throw}. Некоторые исключения:
+\begin{itemize}
+  \item Все локальные переменные инициализируются изначально независимо от того, где они были определены в тексте программы.
+  \item Все формы из предложений \lstinline{initially} собираются и обрамляются в \lstinline{progn}. Полученная форма выполняется после инициализации локальных переменных.
+  \item Аналогично предыдущему пункту — \lstinline{finally}.
+\end{itemize}
+
+\subsubsection{Типы предложений}
+Все возможные предложения бывают следующих типов:
+\begin{itemize}
+  \item инициализация переменных и изменение значений с заданным шагом на каждой итерации
+    \begin{itemize}
+      \item \lstinline{for} и \lstinline{as} предложения позволяют определить различные циклы. Определяются переменные, которые будучи единожды проинициализированы, изменяются в соответствии с указанными правилами, например, увеличиваются с определенным шагом. Можно эти предложения комбинировать, использую ключевое слово \lstinline{and}, при этом инициализация переменных будет происходить параллельно.
+      \item Конструкция \lstinline{with} похожа на конструкцию \lstinline{let}. Как и в случае с \lstinline{for}, предложения \lstinline{with} можно комбинировать.
+    \end{itemize}
+    Возможно указать типы данных для локальных переменных. Попытка связать переменную с какими-либо значениями дважды приведёт к ошибке.
+  \item накопление значений
+    \begin{itemize}
+      \item \lstinline{collect} создает список, в который добавляются значения, полученные вычисленнием формы на каждой итерации. По умолчанию возвращает список значений, когда цикл завершается.
+      \item \lstinline{append} создает список, путём соединения списков, полученных вычисленнием формы на каждой итерации. По умолчанию возвращает список, когда цикл завершается (см. функцию \lstinline{APPEND}).
+      \item \lstinline{nconc} создает список, путём соединения списков, полученных вычисленнием формы на каждой итерации. По умолчанию возвращает список, когда цикл завершается (см. функцию \lstinline{nconc}).
+      \item \lstinline{sum} суммирует численные значения, полученные выполнением переданной формы на каждой итерации. По умолчанию возвращает итоговую сумму, когда цикл завершается.
+      \item \lstinline{count} определяет количество раз, переданная форма вычислилась в истинное значение. По умолчанию возвращает количество, когда цикл завершается.
+      \item \lstinline{minimize} выполняет переданную форму на каждой итерации и сохраняет минимальное значение. По умолчанию возвращает минимальное значение, когда цикл завершается.
+      \item \lstinline{maximize} выполняет переданную форму на каждой итерации и сохраняет максимальное значение. По умолчанию возвращает максимальное значение, когда цикл завершается.
+    \end{itemize}
+  \item условия останова
+    \begin{itemize}
+      \item \lstinline{loop-finish} завершает цикл, возвращая все накопленные значение до этого момента. При этом могут выполниться предложения \lstinline{finally}, если это указано.
+      \item \lstinline{for} и \lstinline{as} завершают цикл по условию, заданному в их определении.
+      \item \lstinline{repeat} завершает цикл после заданного количества итерацией.
+      \item \lstinline{while} завершает цикл, как только переданная форма вычисляется в ложное значение. Эквивалентно выражению \lstinline{(if (not condition) (loop-finish))}.
+      \item \lstinline{until} завершает цикл, как только переданная форма вычисляется в истинное значение. Эквивалентно выражению \lstinline{(if condition (loop-finish))}.
+      \item \lstinline{always} завершает цикл, как только переданная формы вычисляется в ложное значение, и возвращает \lstinline{NIL}. Иначе, предоставляет \lstinline{T} как возвращаемое значение по умолчанию.
+      \item \lstinline{never} завершает цикл, как только переданная формы вычисляется в истинное значение, и возвращает \lstinline{NIL}. Иначе, предоставляет \lstinline{T} как возвращаемое значение по умолчанию.
+      \item \lstinline{thereis} завершает цикл, как только переданная формы вычисляется в истинное значение, и возвращает вычисленное значение.
+    \end{itemize}
+  \item безусловное выполнение
+    \begin{itemize}
+      \item Все формы в \lstinline{do} просто выполняются по порядку.
+      \item \lstinline{return} возвращает из цикла значение, полученное в результате вычисление переданной формы. Эквивалетная предложению \lstinline{do (return value)}.
+    \end{itemize}
+  \item условное выполнение
+    \begin{itemize}
+      \item Конструкция \lstinline{if} состоит из формы и предложения, которое выполняется, если формы вычисляется в истинное значение. Предложением может быть накопление значений, безусловное или еще одно условное предложение; либо комбинация перечисленных типов предложений с помощью ключевого слова \lstinline{and}.
+      \item \lstinline{when} — синоним \lstinline{if}.
+      \item Поведение \lstinline{unless} такое же, как и у \lstinline{when}, только предложения выполняются только тогда, когда формы вычисляется в ложное значение.
+      \item Конструкция \lstinline{else} является необязательной состовляющей конструкций \lstinline{if}, \lstinline{when} и \lstinline{unless}. Если в этих конструкциях значение вычисленной формы приводит к невычислению соответствующих предложений, то выполняется предложение из \lstinline{else}.
+      \item С помощью \lstinline{end} можно обозначать окончание условного предложения.
+    \end{itemize}
+  \item другие операции
+    \begin{itemize}
+      \item Конструкция \lstinline{named} назначает имя конкретной конструкции \lstinline{loop}.
+      \item Формы, определенные в предложении \lstinline{initially}, вычисляются в сразу же после инициализации всех переменных.
+      \item Формы, определенные в предложении \lstinline{finally}, вычисляются в эпилоге после обычного завершения цикла. Безусловное предложение может следовать за \lstinline{finally}.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Пролог и эпилог}
+\lstinline{LOOP} состоит из:
+\begin{itemize}
+  \item \emph{эпилога}. Выполняется до самого цикла непосредственно.
+  \item \emph{самого цикла}. Тут-то и происходят всё значительное.
+  \item \emph{эпилога}. Выполняется после самого цикла непосредственно.
+\end{itemize}
+
+Пролог выполняется всегда, даже если цикл не выполнит ни одной итерации. Эпилог же может быть не выполнен в следующих случаях:
+\begin{itemize}
+  \item Выполнение предложения \lstinline{return}.
+  \item Выполнение \lstinline{RETURN}, \lstinline{RETURN-FROM} или другой конструкции передачи управления.
+  \item Цикл завершается в \lstinline{always}, \lstinline{nerver} или \lstinline{thereis}
+\end{itemize}
+
+Внутри эпилога могут использоваться \lstinline{RETURN} или \lstinline{RETURN-FROM} для возврата значения. Это имеет приоритет над возвращаемыми значениями предложениями накопления или останова.
+
+
+\subsubsection{Синтаксис}
+Ниже приводится упрощенный синтаксиса \lstinline{LOOP} без подробностей:
+\begin{plainlst}{}{}
+initial-final ::= initially | finally
+variables ::= with | initial-final | for-as | repeat
+main ::= unconditional | accumulation | conditional
+       | termination | initial-final
+loop ::= (loop [named name] {variables}* {main}*)
+\end{plainlst}
+
+\subsection{Детали и примеры}
+С помощью \lstinline{for}-предложения можно итерировать по:
+\begin{itemize}
+  \item численным интервалы с заданным шагом;
+  \item спискам;
+  \item спискам, состоящим из cons-ячейки;
+  \item векторам, включая подтипы, такие как: строки и битовые вектора;
+  \item парам ключ-значение хеш-таблиц;
+  \item символам пакета;
+  \item результатам повторно вычислямой формы на каждой итерации.
+\end{itemize}
+
+\lstinline{loop} может содержать несколько \lstinline{for}-предложений, но цикл завершится, если хотя бы одно из них завершится.
+\begin{cllst}{}{}
+(loop
+   for item in '(1 2 3)
+   for i from 1 to 4
+   collect i)            => (1 2 3)
+\end{cllst}
+
+\begin{cllst}{Циклы со счётчиками}{}
+(loop for i upto 3 collect i)             => (0 1 2 3)
+(loop for i from -1 downto -3 collect i)  => (-1 -2 -3)
+(loop for i from 1 to 3 collect i)        => (1 2 3)
+(loop repeat 3 collect (random 3))        => (2 2 0)
+(loop for i below 6 by 2 collect i)       => (0 2 4)
+\end{cllst}
+
+\subsubsection{Циклы по пакетам и коллекциям}
+\begin{cllst}{}{}
+(loop for i in (list 1 2 3 4) collect i) => (1 2 3 4)
+(loop for i in (list 1 2 3 4) by #'cddr collect i) => (1 3)
+(loop for x on (list 1 2 3) collect x) ==> ((1 2 3) (2 3) (3))
+(loop for x on (list 1 2 3 4) by #'cddr collect x) ==> ((1 2 3 4) (3 4))
+(loop for x across "abcd" collect x) ==> (#\a #\b #\c #\d)
+\end{cllst}
+
+Итерирование по хеш-таблице или пакету немного сложнее, так как хеш-таблицы и пакеты содержат различные множества значений, по которым можно итерировать. Общая форма:
+\begin{cllst}{}{}
+(loop for var being the things in hash-or-package ...)
+\end{cllst}{}
+
+Для хеш-таблиц возможными значениями для \texttt{things} являются \texttt{hash-keys} и \texttt{hash-values}, означающие, что \texttt{var} будет связываться со значениями ключей или самими значениями хеш-таблицы, соответственно. Форма \texttt{hash-or-package} вычисляется единожды.
+
+Для итерирования по пакету \texttt{things} может быть \texttt{symbols}, \texttt{present-symbols} и \texttt{external-symbols}. \texttt{var} будет связываться с каждым символом, доступным в пакете, каждым символом, присутствующем в пакете или с каждым символом, экспортированным из пакета, соответственно.
+
+Так как часто при итерировании по хеш-таблицам нужны и ключи, и сами значения, то в предложении для хеш-таблиц можно использовать using-подпредложение.
+\begin{cllst}{}{}
+(loop for k being the hash-keys in h using (hash-value v) ...)
+(loop for v being the hash-values in h using (hash-key k) ...)
+
+(length (loop for s being the symbol in :cl-user collect s)) => 1277
+\end{cllst}{}
+
+\subsubsection{Equals-then итерирование}
+Если ни одна форма итерирования, приведённых выше, в предложении \lstinline{for} не подходит, то можно организовывать цикл с какой-угодно логикой изменения итерируемых переменных, использую предложение \lstinline{equals-then}.
+\begin{cllst}{}{}
+(loop for var = initial-value-form [ then step-form ] ...)
+
+(loop repeat 5
+   for y = 1 then (+ x y)
+   for x = 0 then y
+   collect y) => (1 1 2 4 8)
+
+(loop repeat 5 
+   for x = 0 then y
+   and y = 1 then (+ x y)
+   collect y) => (1 1 2 3 5)
+\end{cllst}
+
+\subsubsection{Деструктурирование переменных}
+В \lstinline{LOOP} можно деструктурировать элементы списков.
+\begin{cllst}{}{}
+(loop for (a b) in '((1 2) (3 4) (5 6))
+   append (list a b))                      => (1 2 3 4 5 6)
+
+(loop for (a nil) in '((1 2) (3 4) (5 6)) collect a) => (1 3 5)
+\end{cllst}
+
+\subsubsection{Накопление значений}
+\begin{cllst}{}{}
+(defparameter *random* (loop repeat 10 collect (random 1000)))
+(loop for i in *random*
+   counting (evenp i) into evens
+   counting (oddp i) into odds
+   summing i into total
+   maximizing i into max
+   minimizing i into min
+   finally (return (list min max total evens odds)))
+
+=> (34 950 5294 4 6)
+\end{cllst}
+
+\subsubsection{Безусловное выполнение}
+Простейшим способом выполнить произвольный код внутри цикла является использование предложение \lstinline{do} (или \lstinline{doing}).
+\begin{cllst}{}{}
+(loop for i from 1 to 10 do (print i))
+\end{cllst}
+
+Можно завершить цикл и вернуть значение из предложения \lstinline{do}, используя, например, \lstinline{RETURN} или \lstinline{RETURN-FROM}.
+\begin{cllst}{}{}
+(block outer
+    (loop for i from 0 return 100)
+    (print "This will print")
+    200) => 200
+
+(block outer
+    (loop for i from 0 do (return-from outer 100))
+    (print "This won't print")
+    200) => 100
+\end{cllst}
+
+\subsubsection{Условное выполнение}
+Так как в \lstinline{do} можно выполнять произвольный код, то можно использовать, например, \lstinline{IF} и \lstinline{WHEN} для управления потоком выполнения.
+\begin{cllst}{}{}
+(loop for i from 1 to 10 do (when (evenp i) (print i)))
+\end{cllst}
+
+Однако внутри \lstinline{do} нельзя использовать другие предложения, поэтому, например, для суммирования чисел, удовлетворяющих какому-либо условию, необходимо иметь предложения условного выполнения:
+\begin{cllst}{}{}
+(loop for i from 1 to 10 when (evenp i) sum i) => 30
+\end{cllst}
+
+Предложение условного выполнения может содержать предложения накопления значений, безусловного выполнения или другие предложения условного выполнения. Во вложенном предложении можно ссылаться на результат вычисления тестовой формы, используя \lstinline{it}.
+\begin{cllst}{}{}
+(loop for key in some-list when (gethash key some-hash) collect it)
+\end{cllst}
+
+Все предложение условного выполнения могут содержить \lstinline{else}-ветвь. Внутри предложения можно комбинировать с помощью \lstinline{and}. Пример, демонстрирующий многое, но бессмысленно:
+\begin{cllst}{}{}
+(loop for i from 1 to 100
+   if (evenp i)
+     minimize i into min-even and 
+     maximize i into max-even and
+     unless (zerop (mod i 4))
+       sum i into even-not-fours-total
+     end
+     and sum i into even-total
+   else
+     minimize i into min-odd and
+     maximize i into max-odd and
+     when (zerop (mod i 5)) 
+       sum i into fives-total
+     end
+   and sum i into odd-total
+   do (update-analysis min-even
+                       max-even
+                       min-odd
+                       max-odd
+                       even-total
+                       odd-total
+                       fives-total
+                       even-not-fours-total))
+\end{cllst}
