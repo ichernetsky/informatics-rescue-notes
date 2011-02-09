@@ -1,16 +1,4 @@
-# LaTeX files
-*.aux
-*.log
-*.pdf
-*.toc
-*.nav
-*.out
-*.snm
-*.bbl
-*.blg
-*.idx
-*.ilg
-*.ind
+_build/
 
 # C files
 *.o
