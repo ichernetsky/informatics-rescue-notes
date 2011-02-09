@@ -10,7 +10,7 @@ RELPDFNAME = $(NAME)-$(shell date +%Y%m%d).pdf
 LOGNAME = $(NAME).log
 
 .PHONY: all
-all: notes slides
+all: notes
 
 .PHONY: release
 release: clean notes
@@ -27,11 +27,6 @@ $(PDFNAME): $(TEXNAMES)
 		$(PDFLATEX) $(NAME) ; \
         done
 
-.PHONY: slides
-slides:
-	$(CD) slides && $(MAKE)
-
 .PHONY: clean
 clean:
 	$(RM) *~ \#* *.aux *.toc $(NAME)*.pdf *.log *.out *.bbl *.blg *.idx *.ilg *.ind
-	$(CD) slides && $(MAKE) clean
