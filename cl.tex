@@ -342,6 +342,171 @@ Hello, world!
 
 Новые места можно определять с помощью \lstinline{DEFSETF} и \lstinline{DEFINE-SETF-EXPANDER}.
 
+\section{Макросы}
+Макрос — определение того, как переданные S-выражения будут превращены в формы CL. С помощью макросов можно создавать новые синтаксические конструкции или даже встроенные проблемно-ориентированные языки (embedded domain-specific languages).
+
+Когда выражение Lisp содержит вызов макроса, компилятор Lisp, вместо вычисления аргументов и передачи их в функцию, передает аргументы, не вычисляя их, в код макроса, который, в свою очередь, возвращает новое выражение на Lisp, которое затем вычисляется в месте исходного вызова макроса.
+
+Поэтому следуем различать \emph{время раскрытия макросов} и \emph{время выполнения}, когда уже все макросы раскрыты и выполняется обычный код. Код, работающий во время раскрытия макросов, запускается в окружении, сильно отличающимся от окружения кода, работающего во время выполнения. А именно: во время раскрытия макросов не существует способа получить доступ к данным, которые будут существовать во время выполнения. Код, работающий во время раскрытия макросов, может работать только с данными, являющимися неотъемлемой частью исходного кода.
+
+Предположим, что макрос \lstinline{WHEN} определен следующим образом:
+\begin{cllst}{}{}
+(defmacro when (condition &rest body)
+  `(if ,condition (progn ,@body)))
+\end{cllst}
+
+И допустим, что имеется следующая функция \lstinline{FOO}:
+\begin{cllst}{}{}
+(defun foo (x)
+  (when (> x 10) (print 'big)))
+\end{cllst}
+
+В этом случае, параметр \lstinline{condition} будет связан с формой \lstinline{(> x 10)}, а форма \lstinline{(print 'big)} будет собрана в список, который станет значением параметра \lstinline{body}. После раскрытия получится следующий код:
+\begin{cllst}{}{}
+(if (> x 10) (progn (print 'big)))
+\end{cllst}
+
+Синтаксис \lstinline{DEFMACRO} выглядит так:
+\begin{cllst}{}{}
+(defmacro name (parameter*)
+  "Optional documentation string."
+  body-form*)
+\end{cllst}
+
+\subsection{Макропараметры}
+Список параметров макроса является списком \emph{деструктурируемых} параметров. Внутри списка деструктурируемых параметров имя параметра может быть заменено вложенным списком параметров. Параметры в таком списке будут получать свои значения из элементов переданного аргумента-списка. Список деструктурируемых параметров также предоставляет проверку ошибок.
+
+Другой особенностью списка параметров макросов является то, что вы можете использовать \lstinline{&body} как синоним \lstinline{&rest}. Семантически \lstinline{&body} и \lstinline{&rest} эквивалентны.
+\begin{cllst}{Пример макроса}{}
+(defun primep (number)
+  (when (> number 1)
+    (loop for fac from 2 to (isqrt number) never (zerop (mod number fac)))))
+ 
+(defun next-prime (number)
+  (loop for n from number when (primep n) return n))
+
+(defmacro do-primes ((var start end) &body body)
+  `(do ((,var (next-prime ,start) (next-prime (1+ ,var))))
+       ((> ,var ,end))
+     ,@body))
+\end{cllst}
+
+\subsection{Раскрытие}
+Выражения квазицитирования подобны выражениям цитирования за исключением того, что можно ``раскавычить'' (вычислять) определенные подвыражения, предваряя их запятой, за которой возможно следует знак ``at'' (\lstinline{@}). Без этого знака запятая вычисляет и влючает как есть значение следующего за ней подвыражения. Со знаком ``at'' значение, которое должно быть списком, ``вклеивается'' в обрамляющий список.
+
+По сути квазицитирование — это удобный синтаксис для написания кода, который генерирует списки. Когда процедура чтения считывает выражение квазицитирования, она преобразует его в код, который генерирует соответствующую списковую структуру.
+
+\begin{table}[h!]
+  \caption{Примеры квазицитирования}
+  \begin{center}
+    \begin{tabular}{lll}
+      \toprule
+      Квазицитирования & Эквивалентный код & Результат \\
+      \midrule
+      \texttt{`(a (+ 1 2) c)} & \texttt{(list 'a '(+ 1 2) 'c)} & \texttt{(a (+ 1 2) c)} \\
+      \texttt{`(a ,(+ 1 2) c)} & \texttt{(list 'a (+ 1 2) 'c)} & \texttt{(a 3 c)} \\
+      \texttt{`(a (list 1 2) c)} & \texttt{(list 'a '(list 1 2) 'c)} & \texttt{(a (list 1 2) c)} \\
+      \texttt{`(a ,(list 1 2) c)} & \texttt{(list 'a (list 1 2) 'c)} & \texttt{(a (1 2) c)} \\
+      \texttt{`(a ,@(list 1 2))} & \texttt{(append (list 'a) (list 1 2))} & \texttt{(a 1 2 c)} \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+\end{table}
+
+Для проверки раскрытия макроса можно использовать две функции: \lstinline{MACROEXPAND-1} и \lstinline{MACROEXPAND}. Функция \lstinline{MACROEXPAND-1} получает любое выражение в качестве аргумента и возвращает результат одного шага раскрытия макроса. Функция \lstinline{MACROEXPAND} продолжает раскрытие результата пока первый элемент получаемого раскрытия является именем макроса.
+
+\subsection{Устранение протечек}
+Внутренние детали реализации макроса могут ``протекать'' тремя путями.
+
+Предположим, что макрос \lstinline{DO-PRIMES} вызван с выражением \lstinline{(random 100)}:
+\begin{cllst}{}{}
+(do-primes (p 0 (random 100))
+  (format t "~d " p))
+\end{cllst}
+
+Если воспользоваться функцией \lstinline{MACROEXPAND-1}, то можно заметить, что выражение \lstinline{(random 100)} будет вычисляться при каждой проверке условия в макросе \lstinline{DO}:
+\begin{cllst}{}{}
+CL-USER> (macroexpand-1 '(do-primes (p 0 (random 100)) (format t "~d " p)))
+(DO ((P (NEXT-PRIME 0) (NEXT-PRIME (1+ P))))
+    ((> P (RANDOM 100)))
+  (FORMAT T "~d " P))
+T
+\end{cllst}
+
+Исправить это поведение можно вычислением \lstinline{end} единожды и сохранением результата вычисления.
+\begin{cllst}{}{}
+(defmacro do-primes ((var start end) &body body)
+  `(do ((ending-value ,end)
+        (,var (next-prime ,start) (next-prime (1+ ,var))))
+       ((> ,var ending-value))
+     ,@body))
+\end{cllst}
+
+Но данное исправление одной проблемы вводит две других.
+Так как переменные цикла \lstinline{DO} инициализируются в том порядке, в каком они определены в тексте, то при раскрытии макроса выражение, переданное как \lstinline{end}, будет вычислено перед выражением, переданным как \lstinline{start}. Это устраняется изменением порядка определения двух переменных.
+\begin{cllst}{}{}
+(defmacro do-primes ((var start end) &body body)
+  `(do ((,var (next-prime ,start) (next-prime (1+ ,var)))
+        (ending-value ,end))
+       ((> ,var ending-value))
+     ,@body))
+\end{cllst}
+
+Последняя проблема связана с именем переменной \lstinline{ending-value}. Проблема в том, что это имя может быть использовано во внешнем пользовательском кодом. Следующий вызов do-primes не работает корректно из-за данной ``протечки'':
+\begin{cllst}{}{}
+(do-primes (ending-value 0 10)
+  (print ending-value))
+\end{cllst}
+
+С помощью \lstinline{MACROEXPAND-1} легко отыскивается причина неверного поведения:
+\begin{cllst}{}{}
+(do ((ending-value (next-prime 0) (next-prime (1+ ending-value)))
+     (ending-value 10))
+    ((> ending-value ending-value))
+  (print ending-value))
+\end{cllst}
+
+Для устранения этой проблемы нужна возможность создавать уникальный символ. Функция \lstinline{GENSYM} возвращает уникальный символ при каждом вызове. Возвращённый символ не интернируется в какой-либо пакет. Код, использующий \lstinline{GENSYM}, не должен быть частью раскрытия.
+\begin{cllst}{}{}
+(defmacro do-primes ((var start end) &body body)
+  (let ((ending-value-name (gensym)))
+    `(do ((,var (next-prime ,start) (next-prime (1+ ,var)))
+          (,ending-value-name ,end))
+         ((> ,var ,ending-value-name))
+       ,@body)))
+\end{cllst}
+
+Теперь вышеприведённое использование макроса будет раскрыто в подобное:
+\begin{cllst}{}{}
+(do ((ending-value (next-prime 0) (next-prime (1+ ending-value)))
+     (#:g2141 10))
+    ((> ending-value #:g2141))
+  (print ending-value))
+\end{cllst}
+
+\subsection{Примеры макросов}
+Было бы неплохо писать код вроде следующего вместо использования \lstinline{GENSYM}:
+\begin{cllst}{}{}
+(defmacro do-primes ((var start end) &body body)
+  (with-gensyms (ending-value-name)
+    `(do ((,var (next-prime ,start) (next-prime (1+ ,var)))
+          (,ending-value-name ,end))
+         ((> ,var ,ending-value-name))
+       ,@body)))
+\end{cllst}
+и получить \lstinline{DO-PRIMES}, эквивалентный предыдущей версии.
+\begin{cllst}{}{}
+(defmacro with-gensyms ((&rest names) &body body)
+  `(let ,(loop for n in names collect `(,n (gensym)))
+     ,@body))
+\end{cllst}
+
+Можно посмотреть, как раскрывается \lstinline{loop}-часть:
+\begin{cllst}{}{}
+CL-USER> (loop for n in '(a b c) collect `(,n (gensym)))
+((A (GENSYM)) (B (GENSYM)) (C (GENSYM)))
+\end{cllst}
+
 \section{Примитивные типы данных}
 \subsection{Числа}
 CL поддерживает несколько числовых типов:
