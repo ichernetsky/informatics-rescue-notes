@@ -749,6 +749,20 @@ CL также предоставляет два набора функций вы
       (format nil "~a is not present" value))))
 \end{cllst}
 
+\begin{cllst}{Функции для хеш-таблиц}{}
+(defparameter *h* (make-hash-table))
+(setf (gethash 'key1 *h*) 'value1)
+(setf (gethash 'key2 *h*) 'value2)
+
+CL-USER> (maphash #'(lambda (k v) (format t "~a => ~a~%" k v)) *h*)
+KEY1 => VALUE1
+KEY2 => VALUE2
+NIL
+
+(loop for k being the hash-keys in *h* using (hash-value v)
+  do (format t "~a => ~a~%" k v))
+\end{cllst}
+
 \section{Loop}
 \lstinline{LOOP} представляет собой встроенный проблемно-ориентированный язык (\emph{embedded domain-specific language, eDSL}) для описания итераций. Что он может:
 \begin{itemize}
