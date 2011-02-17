@@ -729,7 +729,25 @@ CL также предоставляет два набора функций вы
   #("foo" "bar" "1baz") :key #'(lambda (x) (elt x 0))) => #("foo" "bar")
 \end{cllst}
 
-Продолжение, может быть, следует…
+\subsection{Хеш-таблицы}
+Хеш-таблицы создаются функцией с говорящим именем \lstinline{MAKE-HASH-TABLE}. Имеет среди прочих один аргумент: \lstinline{:test}. С помощью него можно указать одну из четырёх функций: \lstinline{EQ}, \lstinline{EQL}, \lstinline{EQUAL}, \lstinline{EQUALP}, используемую для сравнения ключей.
+
+Функция \lstinline{GETHASH} обеспечивает доступ к элементам хеш-таблицы.
+\begin{cllst}{}{}
+(defparameter *h* (make-hash-table))
+(gethash 'foo *h*) => NIL
+(setf (gethash 'foo *h*) 'quux)
+(gethash 'foo *h*) => QUUX
+\end{cllst}
+
+\lstinline{GETHASH} возвращает на самом деле два значения. Получить их можно используя макрос \lstinline{MULTIPLE-VALUE-BIND}.
+\begin{cllst}{}{}
+(defun show-value (key hash-table)
+  (multiple-value-bind (value present) (gethash key hash-table)
+    (if present
+      (format nil "~a is present" value)
+      (format nil "~a is not present" value))))
+\end{cllst}
 
 \section{Loop}
 \lstinline{LOOP} представляет собой встроенный проблемно-ориентированный язык (\emph{embedded domain-specific language, eDSL}) для описания итераций. Что он может:
