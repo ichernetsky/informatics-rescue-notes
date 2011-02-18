@@ -847,6 +847,100 @@ NIL
 (mapcon #'list '(1 2 3 4)) =>  ((1 2 3 4) (2 3 4) (3 4) (4))
 \end{cllst}
 
+\subsection{Списки как деревья}
+Так как списки могут содержать любые значения, а ,следовательно, и списки, то с их помощью можно представлять любого вида деревья. Например, \lstinline{'((nil 1 nil) 2 (nil 3 nil))} представляет собой бинарное дерево поиска, в которое были вставлены последовательно числа $2$, $1$ и $3$.
+
+Для работы с такими деревьями в CL есть несколько специальных функций. Одна из них — \lstinline{COPY-TREE}, которая, в отличие от \lstinline{COPY-LIST}, копирует списки не только вдоль, но и вглубь. Функция \lstinline{TREE-EQUAL} проверяет, равны ли два дерева, что подразумевает одинаковость их форм и равенство содержащихся в них значений.
+
+Функция \lstinline{SUBST} заменяет один элемент дерева другим. Подобное делают функции \lstinline{SUBST-IF}, \lstinline{NSUBST} и \lstinline{NSUBST-IF} с очевидными особенностями.
+\begin{cllst}{}{}
+(subst 10 1 '(1 2 (3 2 1) ((1 1) (2 2)))) => (10 2 (3 2 10) ((10 10) (2 2)))
+\end{cllst}
+
+\subsection{Списки как множества}
+Реализация множеств в CL — это набор функцией, которые производят теоретико-множественные операции над списками. Для добавления элемента в множество есть функции \lstinline{ADJOIN} и \lstinline{PUSHNEW}.
+\begin{cllst}{}{}
+(defparameter *set* ())
+(adjoin 1 *set*)
+*set* => NIL
+
+(setf *set* (adjoin 1 *set*))
+(pushnew 2 *set*)
+*set* => (2 1)
+(pushnew 2 *set*)
+*set* => (2 1)
+\end{cllst}
+
+Функции \lstinline{MEMBER}, \lstinline{MEMBER-IF} и \lstinline{MEMBER-IF-NOT} проверяют, принадлежит ли элемент множеству. Вместо того, чтобы вернуть элемент, когда он присутствует в множестве, они возвращают cons-ячейку, содержащую элемент. Если искомый элемент отсутствует в списке, все три функции возвращают \lstinline{NIL}.
+
+Функции \lstinline{INTERSECTION}, \lstinline{UNION}, \lstinline{SET-DIFFERENCE} и \lstinline{SET-DIFFERENCE-OR-EXCLUSIVE} делают то, что следует из их названий. Все эти функции имеют свои парные функции, начинающиеся с \lstinline{N}, которые изменяют переданные множества.
+
+Функция \lstinline{SUBSETP} проверяет, является ли одно множество подмножеством другого.
+
+\subsection{Ассоциативные списки}
+Ассоциативный список — это структура данных, которая отображает ключи на значения, и наоборот. Ассоциативные списки также поддерживают добавление пар ключ/значение, которые скрывают существующие таким образом, что вновь добавленные пары могут быть позже удалены, и первоначальные пары снова станут видимы.
+
+Технически, ассоциативный список является списком, элементами которого являются cons-ячейки.
+\begin{cllst}{}{}
+((a . 1) (b . 2) (c . 3))
+\end{cllst}
+
+Поиск в ассоциативном списке производиться функцией \lstinline{ASSOC} (а также — \lstinline{ASSOC-IF} и \lstinline{ASSOC-IF-NOT}).
+\begin{cllst}{}{}
+(assoc 'c '((a . 1) (b . 2) (c . 3))) => 3
+(assoc 'd '((a . 1) (b . 2) (c . 3))) => NIL
+(cdr (assoc 'a '((a . 1) (b . 2) (c . 3)))) => 1
+(assoc "a" '(("a" . 1) ("b" . 2) ("c" . 3)) :test #'string=) => ("a" . 1)
+(assoc 'a '((a . 10) (a . 1) (b . 2) (c . 3))) => (A . 10)
+\end{cllst}
+
+Функции \lstinline{RASSOC}, \lstinline{RASSOC-IF} и \lstinline{RASSOC-IF-NOT} выполняют поиск с конца списка.
+
+Новый элемент добавить можно функцией \lstinline{ACONS}.
+\begin{cllst}{}{}
+(acons 'new-key 'new-value alist)
+(setf alist (acons 'new-key 'new-value alist))
+(push (cons 'new-key 'new-value) alist)
+\end{cllst}
+
+Для копирования ассоциативного списка следует использовать функцию \lstinline{COPY-ALIST}.
+
+Ассоциативный список также можно создать функцией \lstinline{PAIRLIS}, которая принимает два списка и возвращает список пар.
+
+\subsection{Destructuring-bind}
+С помощью макроса \lstinline{DESTRUCTURING-BIND} можно деструктурировать списки и связывать их части с некоторыми переменными.
+\begin{cllst}{}{}
+(destructuring-bind (parameter*) list
+  body-form*)
+\end{cllst}
+
+\begin{cllst}{Примеры}{}
+(destructuring-bind (x y z) (list 1 2 3)
+  (list :x x :y y :z z)) => (:X 1 :Y 2 :Z 3)
+
+(destructuring-bind (x y z) (list 1 (list 2 20) 3)
+  (list :x x :y y :z z)) => (:X 1 :Y (2 20) :Z 3)
+
+(destructuring-bind (x (y1 y2) z) (list 1 (list 2 20) 3)
+  (list :x x :y1 y1 :y2 y2 :z z)) => (:X 1 :Y1 2 :Y2 20 :Z 3)
+
+(destructuring-bind (x (y1 &optional y2) z) (list 1 (list 2 20) 3)
+  (list :x x :y1 y1 :y2 y2 :z z)) => (:X 1 :Y1 2 :Y2 20 :Z 3)
+
+(destructuring-bind (x (y1 &optional y2) z) (list 1 (list 2) 3)
+  (list :x x :y1 y1 :y2 y2 :z z)) => (:X 1 :Y1 2 :Y2 NIL :Z 3)
+
+(destructuring-bind (&key x y z) (list :x 1 :y 2 :z 3)
+  (list :x x :y y :z z)) => (:X 1 :Y 2 :Z 3)
+
+(destructuring-bind (&key x y z) (list :z 1 :y 2 :x 3)
+  (list :x x :y y :z z)) => (:X 3 :Y 2 :Z 1)
+
+(destructuring-bind (&whole whole &key x y z) (list :z 1 :y 2 :x 3)
+  (list :x x :y y :z z :whole whole))
+ => (:X 3 :Y 2 :Z 1 :WHOLE (:Z 1 :Y 2 :X 3))
+\end{cllst}
+
 \section{Loop}
 \lstinline{LOOP} представляет собой встроенный проблемно-ориентированный язык (\emph{embedded domain-specific language, eDSL}) для описания итераций. Что он может:
 \begin{itemize}
