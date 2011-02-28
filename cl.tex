@@ -857,6 +857,53 @@ NIL
 (subst 10 1 '(1 2 (3 2 1) ((1 1) (2 2)))) => (10 2 (3 2 10) ((10 10) (2 2)))
 \end{cllst}
 
+\begin{cllst}{Обход дерева}{}
+(defun preorder (node f)
+  (when node
+    (funcall f (first node))
+    (preorder (second node) f)
+    (preorder (third node)  f)))
+
+(defun inorder (node f)
+  (when node
+    (inorder (second node) f)
+    (funcall f (first node))
+    (inorder (third node)  f)))
+
+(defun postorder (node f)
+  (when node
+    (postorder (second node) f)
+    (postorder (third node)  f)
+    (funcall f (first node))))
+
+(defun level-order (node f)
+  (loop with level = (list node)
+        while level
+        do
+    (setf level (loop for node in level
+                      when node
+                        do (funcall f (first node))
+                        and collect (second node)
+                        and collect (third node)))))
+
+(defparameter *tree* '(1 (2 (4 (7))
+                            (5))
+                         (3 (6 (8)
+                               (9)))))
+
+(defun show (traversal-function)
+  (format t "~&~(~A~):~12,0T" traversal-function)
+  (funcall traversal-function *tree* (lambda (value) (format t " ~A" value))))
+
+(map nil #'show '(preorder inorder postorder level-order))
+\end{cllst}
+\begin{plainlst}{}{}
+preorder:    1 2 4 7 5 3 6 8 9
+inorder:     7 4 2 5 1 8 6 9 3
+postorder:   7 4 2 5 1 8 6 9 3
+level-order: 1 2 3 4 5 6 7 8 9
+\end{plainlst}
+
 \subsection{Списки как множества}
 Реализация множеств в CL — это набор функцией, которые производят теоретико-множественные операции над списками. Для добавления элемента в множество есть функции \lstinline{ADJOIN} и \lstinline{PUSHNEW}.
 \begin{cllst}{}{}
@@ -2045,6 +2092,157 @@ DONE
 \end{cllst}
 
 Третья функция \lstinline{CERROR} реализует еще один протокол, который есть смесь двух предыдущих. Как и \lstinline{ERROR}, \lstinline{CERROR} вызывает отладичик. Как и \lstinline{WARN}, \lstinline{CERROR} устанавливает перезапуск \lstinline{CONTINUE} вокруг вызова \lstinline{SIGNLA}. Функция \lstinline{CONTINUE} для \lstinline{CERROR} аналогична функции \lstinline{MUFFLE-WARNING} для \lstinline{WARN}.
+
+\section{Примеры}
+\begin{cllst}{Разбивка строки и слияние строк}{}
+(defun comma-split (string)
+  (loop :for start := 0 :then (1+ finish)
+        :for finish := (position #\, string :start start)
+        :collecting (subseq string start finish)
+        :until (null finish)))
+
+(defun write-with-periods (strings)
+  (format t "~{~A~^.~}" strings)
+\end{cllst}
+
+\begin{cllst}{Топологическая сортировка}{}
+(defun topological-sort (graph &key (test 'eql))
+  "Graph is an association list whose keys are objects and whose
+values are lists of objects on which the corresponding key depends.
+Test is used to compare elements, and should be a suitable test for
+hash-tables.  Topological-sort returns two values.  The first is a
+list of objects sorted toplogically.  The second is a boolean
+indicating whether all of the objects in the input graph are present
+in the topological ordering (i.e., the first value)."
+  (let ((entries (make-hash-table :test test)))
+    (flet ((entry (vertex)
+             "Return the entry for vertex.  Each entry is a cons whose
+              car is the number of outstanding dependencies of vertex
+              and whose cdr is a list of dependants of vertex."
+             (multiple-value-bind (entry presentp) (gethash vertex entries)
+               (if presentp entry
+                 (setf (gethash vertex entries) (cons 0 '()))))))
+      ;; populate entries initially
+      (dolist (vertex graph)
+        (destructuring-bind (vertex &rest dependencies) vertex
+          (let ((ventry (entry vertex)))
+            (dolist (dependency dependencies)
+              (let ((dentry (entry dependency)))
+                (unless (funcall test dependency vertex)
+                  (incf (car ventry))
+                  (push vertex (cdr dentry))))))))
+      ;; L is the list of sorted elements, and S the set of vertices
+      ;; with no outstanding dependencies.
+      (let ((L '())
+            (S (loop for entry being each hash-value of entries
+                     using (hash-key vertex)
+                     when (zerop (car entry)) collect vertex)))
+        ;; Until there are no vertices with no outstanding dependencies,
+        ;; process vertices from S, adding them to L.
+        (do* () ((endp S))
+          (let* ((v (pop S)) (ventry (entry v)))
+            (remhash v entries)
+            (dolist (dependant (cdr ventry) (push v L))
+              (when (zerop (decf (car (entry dependant))))
+                (push dependant S)))))
+        ;; return (1) the list of sorted items, (2) whether all items
+        ;; were sorted, and (3) if there were unsorted vertices, the
+        ;; hash table mapping these vertices to their dependants
+        (let ((all-sorted-p (zerop (hash-table-count entries))))
+          (values (nreverse L)
+                  all-sorted-p
+                  (unless all-sorted-p
+                    entries))))))
+
+> (defparameter *dependency-graph*
+  '((des-system-lib   std synopsys std-cell-lib des-system-lib dw02 dw01 ramlib ieee)
+    (dw01             ieee dw01 dware gtech)
+    (dw02             ieee dw02 dware)
+    (dw03             std synopsys dware dw03 dw02 dw01 ieee gtech)
+    (dw04             dw04 ieee dw01 dware gtech)
+    (dw05             dw05 ieee dware)
+    (dw06             dw06 ieee dware)
+    (dw07             ieee dware)
+    (dware            ieee dware)
+    (gtech            ieee gtech)
+    (ramlib           std ieee)
+    (std-cell-lib     ieee std-cell-lib)
+    (synopsys)))
+*DEPENDENCY-GRAPH*
+
+> (topological-sort *dependency-graph*)
+(IEEE DWARE DW02 DW05 DW06 DW07 GTECH DW01 DW04 STD-CELL-LIB SYNOPSYS STD DW03 RAMLIB DES-SYSTEM-LIB)
+T
+NIL
+\end{cllst}
+
+\begin{cllst}{Зиг-заг матрица}{}
+(defun zigzag (n)
+  (flet ((move (i j)
+           (if (< j (1- n))
+               (values (max 0 (1- i)) (1+ j))
+               (values (1+ i) j))))
+    (loop with a = (make-array (list n n) :element-type 'integer)
+          with x = 0
+          with y = 0
+          for v from 0 below (* n n)
+          do (setf (aref a x y) v)
+             (if (evenp (+ x y))
+                 (setf (values x y) (move x y))
+                 (setf (values y x) (move y x)))
+          finally (return a))))
+
+ 0  1  5  6 14
+ 2  4  7 13 15
+ 3  8 12 16 21
+ 9 11 17 20 22
+10 18 19 23 24
+\end{cllst}
+
+\begin{cllst}{Небольшие применения loop}{}
+(defun sum-of-squares (vector)
+  (loop for x across vector sum (expt x 2))
+
+(defun sieve-of-eratosthenes (maximum)
+  (let ((composites (make-array (1+ maximum) :element-type 'bit
+                                             :initial-element 0)))
+    (loop for candidate from 2 to maximum
+          when (zerop (bit composites candidate))
+            collect candidate
+            and do (loop for composite from (expt candidate 2) to maximum by candidate
+                         do (setf (bit composites composite) 1)))))
+\end{cllst}
+
+\begin{cllst}{Quicksort}{}
+(defun quicksort (list)
+  (if (<= (length list) 1)
+      list
+      (let ((pivot (first list)))
+	(append	(quicksort (remove-if-not #'(lambda (x) (< x pivot)) list))
+			   (remove-if-not #'(lambda (x) (= x pivot)) list)
+		(quicksort (remove-if-not #'(lambda (x) (> x pivot)) list))))))
+
+(defun qs (list)
+  (if (< (length list) 2)
+      list
+      (macrolet ((pivot (test) `(remove (first list) list :test-not #',test)))
+        (append (qs (pivot >)) (pivot =) (qs (pivot <))))))
+
+(defun quicksort (sequence)
+  (labels ((swap (a b) (rotatef (elt sequence a) (elt sequence b)))
+           (sub-sort (left right)
+             (when (< left right)
+               (let ((pivot (elt sequence right))
+                     (index left))
+                 (loop for i from left below right
+                       when (<= (elt sequence i) pivot)
+                         do (swap i (prog1 index (incf index))))
+                 (swap right index)
+                 (sub-sort left (1- index))
+                 (sub-sort (1+ index) right)))))
+    (sub-sort 0 (1- (length sequence)))
+    sequence))
+\end{cllst}
 
 \begin{thebibliography}{9}
 
