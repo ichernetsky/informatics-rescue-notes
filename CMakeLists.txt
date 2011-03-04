@@ -10,5 +10,5 @@ execute_process(COMMAND ${CMAKE_COMMAND}
 
 add_latex_document(notes.tex
   INPUTS basic-ds.tex concurrent.tex network.tex
-         python.tex advanced-ds.tex cl.tex
+         python.tex advanced-ds.tex cl.tex ml.tex
   DEFAULT_PDF)
