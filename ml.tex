@@ -127,3 +127,25 @@ def sim_pearson(vec1, vec2):
     r = num / den
     return r
 \end{pylst}
+
+\subsection{Пример кластеризации: ирисы Фишера}
+Набор данных состоит из записей, содержащих данные о длине и ширине чашелистика, длины и ширины лепестка и, собственно, сорта ириса.
+\begin{plainlst}{}{}
+5.1,3.5,1.4,0.2,setosa
+...
+7.0,3.2,4.7,1.4,versicolor
+...
+6.3,3.3,6.0,2.5,virginica
+...
+\end{plainlst}
+
+На \autoref{ml:fig:iris-dataset-visualization} представлены графики, построенные по этому набору данных.
+
+\begin{figure}[htb]
+  \begin{center}
+    \leavevmode
+    \includegraphics[width=0.8\textwidth]{images/ml/iris-flower-dataset}
+  \end{center}
+  \caption{Визуализация набора данных ``Ирисы Фишера''. setosa — красный, versicolor — зелёный, virginica — синий.}
+  \label{ml:fig:iris-dataset-visualization}
+\end{figure}
