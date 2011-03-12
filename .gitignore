@@ -7,3 +7,6 @@ _build/
 *.cmi
 *.cmo
 *.cmx
+
+# Python
+*.pyc
