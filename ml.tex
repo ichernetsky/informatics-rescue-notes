@@ -128,6 +128,40 @@ def sim_pearson(vec1, vec2):
     return r
 \end{pylst}
 
+\subsection{Реализация алгоритма $k$ средних}
+
+\begin{pylst}{}{}
+from numpy import *
+from metrics import sim_distance
+
+def kmeans(data, distance=sim_distance, k=3, iternum=100, err=0.0005):
+    vecnum, veclen = data.shape
+    minima = data.min(axis=0)
+    maxima = data.max(axis=0)
+
+    centroids = random.rand(k, veclen) * (maxima - minima) + minima
+    clusters = None
+
+    for t in range(iternum):
+        distances = zeros(shape=(k, vecnum))
+        for i in range(k):
+            distances[i] = sum((data - centroids[i,:])**2, axis=1)
+
+        clusters = distances.argmin(axis=0)
+        clusters.shape = (vecnum, 1)
+
+        old_centroids = centroids.copy()
+        for i in range(k):
+            cluster = where(clusters == i, 1, 0)
+            if sum(cluster) > 0:
+                centroids[i,:] = sum(data * cluster, axis=0) / sum(cluster)
+
+        if abs(sum(centroids - old_centroids)) < err:
+            break
+
+    return centroids, clusters
+\end{pylst}
+
 \subsection{Пример кластеризации: ирисы Фишера}
 Набор данных состоит из записей, содержащих данные о длине и ширине чашелистика, длины и ширины лепестка и, собственно, сорта ириса.
 \begin{plainlst}{}{}
@@ -141,11 +175,22 @@ def sim_pearson(vec1, vec2):
 
 На \autoref{ml:fig:iris-dataset-visualization} представлены графики, построенные по этому набору данных.
 
-\begin{figure}[htb]
+\begin{figure}[tb]
   \begin{center}
     \leavevmode
     \includegraphics[width=0.8\textwidth]{images/ml/iris-flower-dataset}
   \end{center}
   \caption{Визуализация набора данных ``Ирисы Фишера''. setosa — красный, versicolor — зелёный, virginica — синий.}
   \label{ml:fig:iris-dataset-visualization}
+\end{figure}
+
+На \autoref{ml:fig:iris-dataset-kmeans} иллюстрирован возможный результат алгоритма $k$ средних.
+
+\begin{figure}[tb]
+  \begin{center}
+    \leavevmode
+    \includegraphics[width=0.8\textwidth]{images/ml/iris-flower-kmeans}
+  \end{center}
+  \caption{Визуализация клустеризации набора данных ``Ирисы Фишера''.}
+  \label{ml:fig:iris-dataset-kmeans}
 \end{figure}
