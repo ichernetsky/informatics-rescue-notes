@@ -1,6 +1,82 @@
 \chapter{Машинное обучение}
 \label{ch:ml}
 
+\section{Градиентный спуск}
+Пусть мы имеем функцию $z = sin(x)sin(y)$ (см. \autoref{ml:descent:sin}) и нам надо, находясь в какой-либо точке, добраться до наивысшей из этой точки, иначе говоря, найти локальный максимум функции $z$. Для быстрейшего достижения локального максимума целесообразно двигаться в направлении наискорейшего возрастания функции $z$, иначе: вдоль градиента.
+
+\IfNotDraft
+{
+\begin{figure}[htb]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[colorbar]
+      \addplot3[
+        surf,
+        domain=-pi:pi,
+        samples=40] {
+          sin(deg(x))*sin(deg(y))
+        };
+    \end{axis}
+  \end{tikzpicture}
+  \caption{График функции $z = sin(x)sin(y)$}
+  \label{ml:descent:sin}
+\end{figure}
+}
+
+В этом и состоит смысл алгоритма \emph{градиентного спуска}: шагаем вдоль градиента до тех пор, пока не остановимся (ну, или почти). Пусть мы находимся в некоторой точке $\theta$, тогда обновление её координат происходит следующим образом:
+\[
+\theta_j = \theta_j - \alpha\frac{\partial}{\partial\theta_j}J(\theta),
+\]
+где $J(\theta)$ — матрица Якоби.
+
+\begin{pylst}{Реализация градиентного спуска}{}
+from numpy import *
+
+def z_jacobian(vec):
+    x, y = vec
+    return array([cos(x) * sin(y),
+                  sin(x) * cos(y)])
+
+def gdescent(x, jacobian, maxiter=1000, eps=0.01, precision=0.00001):
+    for i in range(maxiter):
+        old_x = x.copy()
+        x = old_x + eps * jacobian(x)
+        if sum((x - old_x) ** 2) < precision:
+            break
+    return x
+\end{pylst}
+
+Ниже представлены промежуточные результаты алгоритма для начальной точки $[2; -1]$.
+\IfNotDraft
+{
+\begin{figure}[htb]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[colorbar]
+      \addplot3[
+        surf,
+        domain=-pi:pi,
+        samples=40] {
+          sin(deg(x))*sin(deg(y))
+        };
+
+     \addplot3+[teal,mark options=teal] coordinates {
+       (2.00,-1.00,-0.76)
+       (2.14,-0.79,-0.60)
+       (2.28,-0.56,-0.40)
+       (2.40,-0.30,-0.20)
+       (2.45,0.00,0.00)
+       (2.40,0.29,0.20)
+       (2.29,0.55,0.40)
+       (2.14,0.79,0.60)
+       (1.97,1.04,0.80)
+       (1.77,1.32,0.95)
+     };
+    \end{axis}
+  \end{tikzpicture}
+\end{figure}
+}
+
 \section{Кластеризация}
 \emph{Кластеризация} — метод обнаружения групп (кластеров) связанных между собой объектов. Кластеризация — пример обучения без учителя.
 

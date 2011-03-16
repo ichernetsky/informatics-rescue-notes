@@ -1,5 +1,11 @@
 \documentclass[oneside]{book}
 
+\usepackage{ifthen}
+\newboolean{draft}
+\setboolean{draft}{false}
+\newcommand{\IfDraft}[1]{\ifthenelse{\boolean{draft}}{#1}{}}
+\newcommand{\IfNotDraft}[1]{\ifthenelse{\boolean{draft}}{}{#1}}
+
 \usepackage[utf8]{inputenc}
 \usepackage[russian]{babel}
 \usepackage[a4paper]{geometry}
@@ -8,6 +14,7 @@
 
 \usepackage{tikz}
 \usetikzlibrary{arrows,backgrounds,calc,positioning,trees}
+\usepackage{pgfplots}
 
 \usepackage{graphicx}
 
