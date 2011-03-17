@@ -27,22 +27,29 @@
 \[
 \theta_j = \theta_j - \alpha\frac{\partial}{\partial\theta_j}J(\theta),
 \]
-где $J(\theta)$ — матрица Якоби.
+где $J(\theta)$ — матрица Якоби. По приведённой формуле можно найти локальные \emph{минимум} функции. Для нахождения же \emph{максимума} следует использовать в формуле плюс вместо минуса.
 
 \begin{pylst}{Реализация градиентного спуска}{}
+import operator
+
 from numpy import *
 
-def z_jacobian(vec):
+def sinsin_gradient(vec):
     x, y = vec
     return array([cos(x) * sin(y),
                   sin(x) * cos(y)])
 
-def gdescent(x, jacobian, maxiter=1000, eps=0.01, precision=0.00001):
+def gdescent(initial, gradient_fn, step_fn=operator.sub,
+             maxiter=1000, eps=0.01, precision=0.00001):
+
+    x = initial
     for i in range(maxiter):
         old_x = x.copy()
-        x = old_x + eps * jacobian(x)
+        x = step_fn(old_x, eps * gradient_fn(x))
+
         if sum((x - old_x) ** 2) < precision:
             break
+
     return x
 \end{pylst}
 
@@ -76,6 +83,122 @@ def gdescent(x, jacobian, maxiter=1000, eps=0.01, precision=0.00001):
   \end{tikzpicture}
 \end{figure}
 }
+
+\subsection{Применение к обучению}
+Допустим, у нас есть табличные данные о площади квартир, количестве комнат в каждой из них и их стоимости.
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{ccc}
+    \toprule
+    \textbf{Жилая площадь ($\text{м}^2$)} & \textbf{Кол-во комнат} & \textbf{Стоимость ($1000\$$)} \\
+    \midrule
+    120 & 4 & 157 \\
+    90  & 3 & 120 \\
+    …   & … & …   \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Перед нами стоит задача аппроксимировать табличные данные функцией какого-либо вида. В данном случае выбор линейной функции — годится.
+\[
+h_\theta(x) = \theta_0 + \theta_1 x_1 + \theta_2 x_2,
+\]
+где $\theta_i$ — параметры (или веса), а $x_0 = 1$. Тогда
+\[
+h(x) = \sum_{i = 0}^n \theta_i x_i = \theta^T x.
+\]
+
+Теперь нам надо как-то получить конкретные значения параметров $\theta_i$. Попытаемся приблизить $h(x)$ к тестовым данным как можно ближе. Для этого введём \emph{функцию стоимости}:
+\[
+J(\theta) = \frac{1}{2} \sum_{i = 1}^m (h_\theta(x^{(i)}) - y^{(i)})^2.
+\]
+
+Очевидно, для достижения поставленной цели эту функцию нужно минимизировать. Производная этой функции по параматру $\theta_j$ равна:
+\begin{align*}
+\frac{\partial}{\partial \theta_j} J(\theta) &= \frac{\partial}{\partial \theta_j} \frac{1}{2} (h_\theta(x) - y)^2 \\
+                                             &= 2 \cdot \frac{1}{2} (h_\theta(x) - y) \frac{\partial}{\partial \theta_j} (h_\theta(x) - y) \\
+                                             &= (h_\theta(x) - y) \cdot \frac{\partial}{\partial \theta_j} \left( \sum_{i = 0}^n \theta_i x_i - y \right) \\
+                                             &= (h_\theta(x) - y) x_j.
+\end{align*}
+
+Поэтому правило обновления параметров получается следующим, используя метод градиентного спуска:
+\[
+\theta_j = \theta_j - \alpha (h_\theta(x)^{(i)} - y^{(i)}) x_j^{(i)}.
+\]
+
+Вышеприведённая формула — для случае, когда тестовый набор данных состоит всего лишь из одной записи. Если же записей $m$, то
+\[
+\theta_j = \theta_j - \alpha \sum_{i = 1}^m (h_\theta(x)^{(i)} - y^{(i)}) x_j^{(i)}.
+\]
+
+В результате мы получим \emph{глобальный} минимум, так как функция стоимости имеет только один минимум, а максимума не имеет.
+
+\subsubsection{Пример}
+
+Мы имеем небольшие данные о цене квартир и их площадях. Попытаемся найти параметры $\theta_0$ и $\theta_1$.
+\begin{pylst}{}{}
+def lg_gradient(p):
+    def fn(x):
+        return p[0] + p[1] * x
+
+    result = array([0 for _ in range(len(p))])
+    for x, y in samples:
+        result += (fn(x) - y) * array([1.0, x])
+
+    return result
+
+>>> gdescent(array([20.0, 0.1]), lg_gradient, eps=0.00000001)
+[ 19.99998493   0.06248649]
+\end{pylst}
+
+Следовательно, $\theta_0 = 19.999$ и $\theta_1 = 0.0624$. Функция $price = \theta_0 + \theta_1 square$ проиллюстрирована на \autoref{ml:descent:lms}.
+
+\begin{figure}[htb]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+      xlabel=Square ($ft^2$),
+      ylabel=Price (in \$1000)]
+     \addplot+[only marks,mark=x] coordinates {
+       (1641,112.0)
+       (2232,214.9)
+       (1050,109.9)
+       (2496,155)
+       (1919,117)
+       (672,74.9)
+       (1448,119.5)
+       (1448,122)
+       (1662,135)
+       (1800,159.9)
+       (3900,199.9)
+       (1200,47.9)
+       (2016,127.9)
+       (2496,167.5)
+       (1735,114.9)
+       (2848,153)
+       (1257,82.9)
+       (1480,154.9)
+       (2496,155)
+       (1332,69.9)
+       (1792,100)
+       (2037,179.9)
+       (2488,115)
+       (2356,130)
+       (1919,117)
+       (2186,178.9)
+       (2070,166.9)
+       (1632,169.9)
+       (1735,139.9)
+       (1510,169.9)
+       (2344,379.5)
+     };
+
+     \addplot+[no marks,domain=0:4000]{19.999 + 0.0624*x};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Обучающая выборка и аппроксимированая функция.}
+  \label{ml:descent:lms}
+\end{figure}
 
 \section{Кластеризация}
 \emph{Кластеризация} — метод обнаружения групп (кластеров) связанных между собой объектов. Кластеризация — пример обучения без учителя.
@@ -251,6 +374,8 @@ def kmeans(data, distance=sim_distance, k=3, iternum=100, err=0.0005):
 
 На \autoref{ml:fig:iris-dataset-visualization} представлены графики, построенные по этому набору данных.
 
+\IfNotDraft
+{
 \begin{figure}[tb]
   \begin{center}
     \leavevmode
@@ -259,9 +384,12 @@ def kmeans(data, distance=sim_distance, k=3, iternum=100, err=0.0005):
   \caption{Визуализация набора данных ``Ирисы Фишера''. setosa — красный, versicolor — зелёный, virginica — синий.}
   \label{ml:fig:iris-dataset-visualization}
 \end{figure}
+}
 
 На \autoref{ml:fig:iris-dataset-kmeans} иллюстрирован возможный результат алгоритма $k$ средних.
 
+\IfNotDraft
+{
 \begin{figure}[tb]
   \begin{center}
     \leavevmode
@@ -270,3 +398,4 @@ def kmeans(data, distance=sim_distance, k=3, iternum=100, err=0.0005):
   \caption{Визуализация клустеризации набора данных ``Ирисы Фишера''.}
   \label{ml:fig:iris-dataset-kmeans}
 \end{figure}
+}
