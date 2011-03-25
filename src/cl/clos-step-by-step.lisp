@@ -136,13 +136,21 @@ Signal an error if the current balance is less than amount."))
 
 (defmethod priority + ((job express-job)) 10)
 
-(defgeneric beat (drum stick)
-  (:documentation
-   "Produce a sound by hitting the given drum with the given stick."))
+(defclass asteroid () ())
+(defclass spaceship () ())
 
-(defmethod beat ((drum snare-drum) (stick wooden-drumstick)) ...)
-(defmethod beat ((drum snare-drum) (stick brush)) ...)
-(defmethod beat ((drum snare-drum) (stick soft-mallet)) ...)
-(defmethod beat ((drum tom-tom) (stick wooden-drumstick)) ...)
-(defmethod beat ((drum tom-tom) (stick brush)) ...)
-(defmethod beat ((drum tom-tom) (stick soft-mallet)) ...)
+(defgeneric collide (x y)
+  (:documentation
+   "Do necessary calculations on collision of objects."))
+
+(defmethod collide ((x asteroid) (y spaceship))
+  (format t "Collide: asteroid and spaceship."))
+
+(defmethod collide ((x spaceship) (y asteroid))
+  (collide y x))
+
+(defmethod collide ((x asteroid) (y asteroid))
+  (format t "Collide: two asteroids."))
+
+(defmethod collide ((x spaceship) (y spaceship))
+  (format t "Collide: two spaceships"))
