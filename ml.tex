@@ -431,3 +431,105 @@ def knn(item, dataset):
 >>> knn([4.5, 3.8, 1.2, 0.4], dataset)
 "setosa"
 \end{pylst}
+
+\subsection{kd деревья}
+\emph{kd дерево} (англ. k-dimensional tree) — структура данных, используемая для разбития $k$-размерного пространства на подпространства по некоторым заданных точкам.
+
+kd дерево — это бинарное дерево, в котором каждый узел содержит точку пространства размерности $k$. Каждый внутренний узел представляет собой точку, через которую проходит гиперплоскость, разбивающая пространство на две части. При этом точки из левого поддерева находятся по одну сторону от этой гиперплоскости, точки же правого поддерева — по другую.
+
+Направление гиперплоскостей выбирается следующим образом: выбирается какая-либо ось, и гиперплоскость строится перпендикулярно к этой оси. Например, допустим выбрана ось $x$, тогда все точки текущего поддерева, у которых координата по оси $x$ меньше, будут находится по одну сторону от гиперплоскости, проведённой через точку $(x_{concrete}, 0, \dots)$; оставшиеся же точки — по другую сторону. При этом первые — будут в левом поддереве, вторые же — в правом.
+
+\subsubsection{Построение kd дерева}
+Так как способов выбирать следующую ось, перпендикулярно которой строится следующая гиперплоскость, — много, то и построений может быть — много. Каноническим способом является:
+\begin{itemize}
+  \item Циклически и последовательно выбирать следующую ось по порядку, начиная с оси $x$, для каждого следующего уровня дерева.
+  \item Элементом текущего узла является точка, которая является медианой точек текущего поддерева.
+\end{itemize}
+
+Посмотрим дерево для точек $(2; 3), (5; 4), (9; 6), (4; 7), (8; 1), (7; 2)$. Оно будет выглядеть, как на \autoref{ml:knn:kdtree-pic}. На плоскости же его можно изобразить, как на \autoref{ml:knn:kdtree-2d}.
+
+Ниже приведена реализация построения kd дерева из массива вышеупомянутых точек.
+
+\begin{pylst}{}{}
+class Node(object):
+    def __init__(self, location, left, right):
+        self.location = location
+        self.left = left
+        self.right = right
+
+def kdtree(points, depth=0):
+    if not points.size:
+        return None
+
+    n, k = points.shape
+    axis = depth % k
+
+    points.sort(axis=axis)
+    median = n // 2
+
+    location = points[median]
+    left = kdtree(points[:median], depth + 1)
+    right = kdtree(points[median + 1:], depth + 1)
+    node = Node(location, left, right)
+
+    return node
+\end{pylst}
+
+\begin{figure}[htb]
+  \centering
+  \begin{tikzpicture}[xNode/.style={circle,draw,red},
+                      yNode/.style={circle,draw,blue},
+                      justNode/.style={circle,draw,black},
+                      level distance=1.5cm,
+                      level/.style={sibling distance=2.5cm/#1},
+                      font=\footnotesize]
+    \node [xNode] at (0,0) {$7; 2$}
+      child { node [yNode] {$5; 4$}
+        child { node [justNode] {$2; 3$} }
+        child { node [justNode] {$4; 7$} } }
+      child { node [yNode] {$9; 6$}
+        child { node [justNode] {$8; 1$} } };
+  \end{tikzpicture}
+  \caption{Пример kd дерева.}
+  \label{ml:knn:kdtree-pic}
+\end{figure}
+
+\begin{figure}[htb]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+      xlabel=$x$,
+      ylabel=$y$,
+      xmin=0, xmax=10,
+      ymin=0, ymax=10]
+
+      \draw [red] (axis cs:7,0)
+        -- (axis cs:7,10);
+
+      \draw [blue] (axis cs:0,4)
+        -- (axis cs:7,4);
+
+      \draw [blue] (axis cs:7,6)
+        -- (axis cs:10,6);
+
+      \addplot[
+        scatter/classes={
+          x={mark=square*,red},%
+          y={mark=square*,blue},%
+          n={mark=square*,black}
+        },
+        scatter,only marks,
+        scatter src=explicit symbolic]
+        coordinates {
+          (7,2) [x]
+          (5,4) [y]
+          (9,6) [y]
+          (2,3) [n]
+          (4,7) [n]
+          (8,1) [n]
+        };
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Изображение kd дерева на плоскости.}
+  \label{ml:knn:kdtree-2d}
+\end{figure}
