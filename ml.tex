@@ -399,3 +399,35 @@ def kmeans(data, distance=sim_distance, k=3, iternum=100, err=0.0005):
   \label{ml:fig:iris-dataset-kmeans}
 \end{figure}
 }
+
+\section{Классификация}
+\emph{Классификация} объекта — это указание класса для данного объекта. Например, по значениям длин и ширин чашелистника и лепестка цветка ириса нужно определить его вид.
+
+\subsection{Метод $k$ ближайших соседей}
+Суть \emph{метода $k$ ближайших соседей} (англ. k-nearest neighbor algorithm) состоит в том, что объекту присваивается тот класс, который является наиболее распространённым среди его $k$ соседей. Из этого следует, что нужно иметь набор данных с заранее известными классами объектов.
+
+Для определения близости, как правило, используется евклидова метрика.
+
+Предельно наивная реализация данного алгоритма — предельно очевидна. Она же — приведена ниже:
+\begin{pylst}{Наивная реализация kNN}{}
+def knn(item, dataset):
+    klass = None
+    nearest = None
+
+    for row in dataset:
+        next = metrics.sim_distance(item, row["features"])
+
+        if nearest is None:
+            nearest =  next
+        elif next > nearest:
+            klass = row["class"]
+            nearest = next
+
+    return klass
+\end{pylst}
+
+Пример запуска для набора данных ``Ирисы Фишера'':
+\begin{pylst}{}{}
+>>> knn([4.5, 3.8, 1.2, 0.4], dataset)
+"setosa"
+\end{pylst}
