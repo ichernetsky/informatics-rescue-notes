@@ -1,8 +1,6 @@
 import csv
 import metrics
 
-from numpy import *
-
 def knn(item, dataset):
     klass = None
     nearest = None
@@ -19,27 +17,29 @@ def knn(item, dataset):
     return klass
 
 class Node(object):
-    def __init__(self, location, left, right):
+    def __init__(self, location, kind, left, right):
         self.location = location
+        self.kind = kind
         self.left = left
         self.right = right
 
-def kdtree(points, depth=0):
-    if not points.size:
+def kdtree(dataset, depth=0):
+    if not dataset:
         return None
 
-    n, k = points.shape
+    n = len(dataset)
+    k = len(dataset[0]["features"])
     axis = depth % k
-
-    points.sort(axis=axis)
     median = n // 2
 
-    location = points[median]
-    left = kdtree(points[:median], depth + 1)
-    right = kdtree(points[median + 1:], depth + 1)
-    node = Node(location, left, right)
+    dataset.sort(key=lambda row: row["features"][axis])
 
-    return node
+    location = dataset[median]["features"]
+    kind = dataset[median]["class"]
+    left = kdtree(dataset[:median], depth + 1)
+    right = kdtree(dataset[median + 1:], depth + 1)
+
+    return Node(location, kind, left, right)
 
 if __name__ == "__main__":
     reader = csv.reader(open('iris-flower-dataset.csv', 'r'),
@@ -52,9 +52,4 @@ if __name__ == "__main__":
                          "class"    : row[4]   })
 
     print knn([4.5, 3.8, 1.2, 0.4], dataset)
-    print kdtree(array([(2,3),
-                        (5,4),
-                        (9,6),
-                        (4,7),
-                        (8,1),
-                        (7,2)]))
+    kdtree = kdtree(dataset)

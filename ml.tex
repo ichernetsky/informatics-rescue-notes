@@ -448,33 +448,6 @@ kd дерево — это бинарное дерево, в котором ка
 
 Посмотрим дерево для точек $(2; 3), (5; 4), (9; 6), (4; 7), (8; 1), (7; 2)$. Оно будет выглядеть, как на \autoref{ml:knn:kdtree-pic}. На плоскости же его можно изобразить, как на \autoref{ml:knn:kdtree-2d}.
 
-Ниже приведена реализация построения kd дерева из массива вышеупомянутых точек.
-
-\begin{pylst}{}{}
-class Node(object):
-    def __init__(self, location, left, right):
-        self.location = location
-        self.left = left
-        self.right = right
-
-def kdtree(points, depth=0):
-    if not points.size:
-        return None
-
-    n, k = points.shape
-    axis = depth % k
-
-    points.sort(axis=axis)
-    median = n // 2
-
-    location = points[median]
-    left = kdtree(points[:median], depth + 1)
-    right = kdtree(points[median + 1:], depth + 1)
-    node = Node(location, left, right)
-
-    return node
-\end{pylst}
-
 \begin{figure}[htb]
   \centering
   \begin{tikzpicture}[xNode/.style={circle,draw,red},
@@ -533,3 +506,40 @@ def kdtree(points, depth=0):
   \caption{Изображение kd дерева на плоскости.}
   \label{ml:knn:kdtree-2d}
 \end{figure}
+
+Ниже приведена реализация построения kd дерева из массива вышеупомянутых точек.
+
+\begin{pylst}{}{}
+class Node(object):
+    def __init__(self, location, kind, left, right):
+        self.location = location
+        self.kind = kind
+        self.left = left
+        self.right = right
+
+def kdtree(dataset, depth=0):
+    if not dataset:
+        return None
+
+    n = len(dataset)
+    k = len(dataset[0]["features"])
+    axis = depth % k
+    median = n // 2
+
+    dataset.sort(key=lambda row: row["features"][axis])
+
+    location = dataset[median]["features"]
+    kind = dataset[median]["class"]
+    left = kdtree(dataset[:median], depth + 1)
+    right = kdtree(dataset[median + 1:], depth + 1)
+
+    return Node(location, kind, left, right)
+\end{pylst}
+
+Асимптотическая сложность операций следующая:
+\begin{itemize}
+  \item Построение из $n$ точек — $O(n \log^2 n)$.
+  \item Вставка точки — $O(\log n)$.
+  \item Удаление точки — $O(\log n)$.
+  \item Поиск ближайшей точки — $O(\log n)$ — в среднем; $O(k \cdot n^{1 - \frac{1}{k}})$ — в худшем случае.
+\end{itemize}
