@@ -1,25 +1,20 @@
-RM = rm -f
-TOUCH = touch
+CFLAGS = -g -pedantic -Wall -Wextra
 
-CFLAGS = -pedantic -Wall -Wextra
-
-SOURCES = $(wildcard *.c)
-PROGRAMS = $(basename $(SOURCES))
+binaries = $(sort $(basename $(wildcard *.c)))
 
 .PHONY: all
-all: $(PROGRAMS)
+all: $(binaries)
 all: .gitignore
 
-.gitignore: $(PROGRAMS)
-	$(RM) $@
-	$(TOUCH) $@
-	for d in $(PROGRAMS); do \
-		echo $$d >> $@; \
-	done
+$(binaries) : % : %.c
 
-%: %.c
-	$(CC) $(CFLAGS) $< -o $@
+.gitignore: $(binaries)
+	rm -f $@
+	touch $@
+	for d in $(binaries); do \
+	    echo $$d >> $@; \
+	done
 
 .PHONY: clean
 clean:
-	$(RM) *.o $(PROGRAMS)
+	rm -f $(binaries)
