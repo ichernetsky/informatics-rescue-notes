@@ -128,28 +128,28 @@ int binary_search_rec (int elem, int array[], size_t length)
 Вырожденный случай будет тогда, когда опорный элемент всегда будет наименьшим либо же наибольшим из всех элементов, обрабатываемой части массива.
 
 \begin{clst}{Реализация}{lst:qsort}
-void swap (int a[], int i, int j) {
-  int tmp;
-
-  tmp = a[i];
-  a[i] = a[j];
-  a[j] = tmp;
+static inline void swap(int a[], int i, int j)
+{
+    int tmp = a[i];
+    a[i] = a[j];
+    a[j] = tmp;
 }
 
-void quicksort (int a[], int n) {
-  int i, last;
-  if (n <= 1)
-    return;
+void quicksort(int a[], int n)
+{
+    int i, last = 0;
 
-  swap (a, 0, rand () % n);
-  last = 0;
-  for (i = 1; i < n; i++)
-    if (a[i] < a[0])
-      swap (a, ++last, i);
-  swap (a, 0, last);
+    if (n <= 1)
+        return;
 
-  quicksort (a, last);
-  quicksort (a + last + 1, n - last - 1);
+    swap (a, 0, rand () % n);
+    for (i = 1; i < n; i++)
+        if (a[i] < a[0])
+            swap(a, ++last, i);
+    swap(a, 0, last);
+
+    quicksort(a, last);
+    quicksort(a + last + 1, n - last - 1);
 }
 \end{clst}
 
