@@ -208,72 +208,76 @@ void heapsort (binheap *heap) {
 В приведённой реализации ёмкость массива удваивается при вставке в уже заполненный до отказа массив. Поэтому вставка в конец заполненного массива выполняется за $\Theta(n)$, где $n$ — текущая ёмкость. Но если следом будет вставлено ещё $n - 1$ элемента, то можно считать, что и первый элемент был вставлен за константное время\footnote{За подробностями обращайтесь к \emph{амортизационному анализу (amortized analysis)}.}.
 
 \begin{clst}{Некоторые операции}{lst:dynarray-impl}
-typedef struct extarray extarray;
-struct extarray {
-  int count;
-  int max;
-  int *array;
+struct ea {
+    int count;
+    int max;
+    int *a;
 };
 
-extarray arr;
+enum {
+    EA_INIT = 1,
+    EA_GROW = 2
+};
 
-enum { EXTARRAY_INIT = 1,
-       EXTARRAY_GROW = 2 };
+int add(struct ea *ea, int value)
+{
+    if (NULL == ea->a) {
+        ea->a = (int *) malloc(EA_INIT * sizeof(int));
+        if (NULL == ea->a)
+            return -1;
 
-int add (int value) {
-  if (NULL == arr.array) {
-    arr.array = (int *) malloc (EXTARRAY_INIT * sizeof (int));
-    if (NULL == arr.array)
-      return -1;
-    arr.max = EXTARRAY_INIT;
-    arr.count = 0;
-  } else if (arr.count >= arr.max) {
-    int i;
+        ea->max = EA_INIT;
+        ea->count = 0;
+    } else if (ea->count == ea->max) {
+        int *a = (int *) malloc(EA_GROW * ea->max * sizeof(int));
+        if (NULL == a)
+            return -1;
 
-    int *newarr = (int *) malloc ((EXTARRAY_GROW * arr.max) * sizeof (int));
-    if (NULL == newarr)
-      return -1;
-    memcpy (newarr, arr.array, arr.count * sizeof (int));
-    free (arr.array);
-    arr.max *= EXTARRAY_GROW;
-    arr.array = newarr;
-  }
-  arr.array[arr.count] = value;
-  return arr.count++;
+        memcpy(a, ea->a, ea->count * sizeof(int));
+        free(ea->a);
+
+        ea->max *= EA_GROW;
+        ea->a = a;
+    }
+
+    ea->a[ea->count] = value;
+    return ea->count++;
 }
 
-int del (int value) {
-  int i;
+int del(struct ea *ea, int value)
+{
+    for (int i = 0; i < ea->count; i++)
+        if (value == ea->a[i]) {
+            memmove(ea->a + i, ea->a + i + 1,
+                    (ea->count - i - 1) * sizeof(int));
 
-  for (i = 0; i < arr.count; i++)
-    if (value == arr.array[i]) {
-      memmove (arr.array + i, arr.array + i + 1,
-	       (arr.count - (i + 1)) * sizeof (int));
-      arr.count--;
-      return 1;
-    }
-  return 0;
+            ea->count--;
+            return 1;
+        }
+
+    return 0;
 }
 \end{clst}
 
 \begin{clst}{Пример использования}{lst:dynarray-usage}
-int i;
+struct ea array;
 
-(void) add (5);
-(void) add (3);
-(void) add (2);
-(void) add (7);
-(void) add (6);
+(void) add(&array, 5);
+(void) add(&array, 3);
+(void) add(&array, 2);
+(void) add(&array, 7);
+(void) add(&array, 6);
 
-for (i = 0; i < arr.count; i++)
-  printf ("%d ", arr.array[i]);
-printf ("\n");
+for (int i = 0; i < array.count; i++)
+    printf("%d ", array.a[i]);
+printf("\n");
 
-(void) del (2);
-(void) del (7);
-for (i = 0; i < arr.count; i++)
-  printf ("%d ", arr.array[i]);
-printf ("\n");
+(void) del(&array, 2);
+(void) del(&array, 7);
+
+for (int i = 0; i < array.count; i++)
+    printf("%d ", array.a[i]);
+printf("\n");
 \end{clst}
 
 \section{Списки}

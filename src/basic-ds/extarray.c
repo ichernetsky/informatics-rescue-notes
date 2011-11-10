@@ -2,72 +2,76 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct extarray extarray;
-struct extarray {
-  int count;
-  int max;
-  int *array;
+struct ea {
+    int count;
+    int max;
+    int *a;
 };
 
-extarray arr;
+enum {
+    EA_INIT = 1,
+    EA_GROW = 2
+};
 
-enum { EXTARRAY_INIT = 1,
-       EXTARRAY_GROW = 2 };
+int add(struct ea *ea, int value)
+{
+    if (NULL == ea->a) {
+        ea->a = (int *) malloc(EA_INIT * sizeof(int));
+        if (NULL == ea->a)
+            return -1;
 
-int add (int);
-int del (int);
+        ea->max = EA_INIT;
+        ea->count = 0;
+    } else if (ea->count == ea->max) {
+        int *a = (int *) malloc(EA_GROW * ea->max * sizeof(int));
+        if (NULL == a)
+            return -1;
 
-int main (void) {
-  int i;
+        memcpy(a, ea->a, ea->count * sizeof(int));
+        free(ea->a);
 
-  (void) add (5);
-  (void) add (3);
-  (void) add (2);
-  (void) add (7);
-  (void) add (6);
-
-  for (i = 0; i < arr.count; i++)
-    printf ("%d ", arr.array[i]);
-  printf ("\n");
-
-  (void) del (2);
-  (void) del (7);
-  for (i = 0; i < arr.count; i++)
-    printf ("%d ", arr.array[i]);
-  printf ("\n");
-
-  return EXIT_SUCCESS;
-}
-
-int add (int value) {
-  if (NULL == arr.array) {
-    arr.array = (int *) malloc (EXTARRAY_INIT * sizeof (int));
-    if (NULL == arr.array)
-      return -1;
-    arr.max = EXTARRAY_INIT;
-    arr.count = 0;
-  } else if (arr.count >= arr.max) {
-    int *newarr = (int *) malloc ((EXTARRAY_GROW * arr.max) * sizeof (int));
-    if (NULL == newarr)
-      return -1;
-    memcpy (newarr, arr.array, arr.count * sizeof (int));
-    free (arr.array);
-    arr.max *= EXTARRAY_GROW;
-    arr.array = newarr;
-  }
-  arr.array[arr.count] = value;
-  return arr.count++;
-}
-
-int del (int value) {
-  int i;
-
-  for (i = 0; i < arr.count; i++)
-    if (value == arr.array[i]) {
-      memmove (arr.array + i, arr.array + i + 1,
-	       (arr.count - (i + 1)) * sizeof (int));
-      arr.count--;
-      return 1;
+        ea->max *= EA_GROW;
+        ea->a = a;
     }
-  return 0;
+
+    ea->a[ea->count] = value;
+    return ea->count++;
+}
+
+int del(struct ea *ea, int value)
+{
+    for (int i = 0; i < ea->count; i++)
+        if (value == ea->a[i]) {
+            memmove(ea->a + i, ea->a + i + 1,
+                    (ea->count - i - 1) * sizeof(int));
+
+            ea->count--;
+            return 1;
+        }
+
+    return 0;
+}
+
+struct ea array;
+
+int main (void)
+{
+    (void) add(&array, 5);
+    (void) add(&array, 3);
+    (void) add(&array, 2);
+    (void) add(&array, 7);
+    (void) add(&array, 6);
+
+    for (int i = 0; i < array.count; i++)
+        printf("%d ", array.a[i]);
+    printf("\n");
+
+    (void) del(&array, 2);
+    (void) del(&array, 7);
+
+    for (int i = 0; i < array.count; i++)
+        printf("%d ", array.a[i]);
+    printf("\n");
+
+    return 0;
 }
