@@ -1,87 +1,103 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct list list;
 struct list {
-  int data;
-  list *next;
+    int data;
+    struct list *next;
 };
 
-list *new_item (int);
-list *add_front (list *, list *);
-list *add_end (list *, list *);
-list *remove_item (list *, int);
-void print_backwards (list *);
+struct list *make_item(int data)
+{
+    struct list *item = (struct list *) malloc(sizeof(struct list));
 
-int main (void) {
-  list *head = NULL;
+    item->data = data;
+    item->next = NULL;
 
-  head = add_front (head, new_item (1));
-  head = add_front (head, new_item (2));
-  head = add_front (head, new_item (3));
-  head = add_end (head, new_item (4));
-  head = add_end (head, new_item (5));
-
-  print_backwards (head);
-  printf ("\n");
-
-  head = remove_item (head, 3);
-  head = remove_item (head, 1);
-  head = remove_item (head, 5);
-
-  print_backwards (head);
-  printf ("\n");
-
-  return EXIT_SUCCESS;
+    return item;
 }
 
-list *new_item (int data) {
-  list *new = (list *) malloc (sizeof (list));
-
-  new->data = data;
-  new->next = NULL;
-
-  return new;
+struct list *add_front(struct list *head, struct list *item)
+{
+    item->next = head;
+    return item;
 }
 
-list *add_front (list *head, list *new) {
-  new->next = head;
-  return new;
+struct list *add_back(struct list *head, struct list *item) {
+    struct list *p;
+
+    if (NULL == head)
+        return item;
+
+    for (p = head; p->next != NULL; p = p->next)
+        ;
+    p->next = item;
+    return head;
 }
 
-list *add_end (list *head, list *new) {
-  list *p;
+#define for_each(n, head)                       \
+    for (n = (head); n != NULL; n = n->next)    \
 
-  if (NULL == head)
-    return new;
+struct list *remove_item(struct list *head, int data)
+{
+    struct list *current, *prev = NULL;
 
-  for (p = head; p->next != NULL; p = p->next)
-    ;
-  p->next = new;
-  return head;
-}
+    for_each(current, head) {
+        if (data == current->data) {
+            if (NULL == prev)
+                head = current->next;
+            else
+                prev->next = current->next;
 
-list *remove_item (list *head, int data) {
-  list *current, *prev = NULL;
+            free(current);
+            return head;
+        }
 
-  for (current = head; current != NULL; current = current->next) {
-    if (data == current->data) {
-      if (NULL == prev)
-	head = current->next;
-      else
-	prev->next = current->next;
-      free (current);
-      return head;
+        prev = current;
     }
-    prev = current;
-  }
-  return head;
+
+    return head;
 }
 
-void print_backwards (list *elem) {
-  if (NULL == elem)
-    return;
+void print_forwards(struct list *head)
+{
+    struct list *next;
 
-  print_backwards (elem->next);
-  printf ("%x ", elem->data);
+    for_each(next, head)
+        printf("%x ", next->data);
+}
+
+void print_backwards(struct list *item)
+{
+    if (NULL == item)
+        return;
+
+    print_backwards(item->next);
+    printf("%x ", item->data);
+}
+
+int main(void)
+{
+    struct list *head = NULL;
+
+    head = add_front(head, make_item(1));
+    head = add_front(head, make_item(2));
+    head = add_front(head, make_item(3));
+    head = add_back(head, make_item(4));
+    head = add_back(head, make_item(5));
+
+    print_forwards(head);
+    printf("\n");
+    print_backwards(head);
+    printf("\n");
+
+    head = remove_item(head, 3);
+    head = remove_item(head, 1);
+    head = remove_item(head, 5);
+
+    print_forwards(head);
+    printf("\n");
+    print_backwards(head);
+    printf("\n");
+
+    return 0;
 }

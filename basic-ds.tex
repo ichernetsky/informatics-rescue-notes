@@ -299,81 +299,103 @@ printf("\n");
 Ниже приведено определение списка и реализация некоторых операций над ним.
 
 \begin{clst}{Некоторые операции}{lst:list-impl}
-typedef struct list list;
 struct list {
-  int data;
-  list *next;
+    int data;
+    struct list *next;
 };
 
-list *new_item (int data) {
-  list *new = (list *) malloc (sizeof (list));
+struct list *make_item(int data)
+{
+    struct list *item = (struct list *) malloc(sizeof(struct list));
 
-  new->data = data;
-  new->next = NULL;
+    item->data = data;
+    item->next = NULL;
 
-  return new;
+    return item;
 }
 
-list *add_front (list *head, list *new) {
-  new->next = head;
-  return new;
+struct list *add_front(struct list *head, struct list *item)
+{
+    item->next = head;
+    return item;
 }
 
-list *add_end (list *head, list *new) {
-  if (NULL == head)
-    return new;
+struct list *add_back(struct list *head, struct list *item) {
+    struct list *p;
 
-  list *p;
-  for (p = head; p->next != NULL; p = p->next)
-    ;
-  p->next = new;
-  return head;
+    if (NULL == head)
+        return item;
+
+    for (p = head; p->next != NULL; p = p->next)
+        ;
+    p->next = item;
+    return head;
 }
 
-list *remove_item (list *head, int data) {
-  list *current, *prev = NULL;
+#define for_each(n, head)                       \
+    for (n = (head); n != NULL; n = n->next)    \
 
-  for (current = head; current != NULL; current = current->next) {
-    if (data == current->data) {
-      if (NULL == prev)
-	head = current->next;
-      else
-	prev->next = current->next;
-      free (current);
-      return head;
+struct list *remove_item(struct list *head, int data)
+{
+    struct list *current, *prev = NULL;
+
+    for_each(current, head) {
+        if (data == current->data) {
+            if (NULL == prev)
+                head = current->next;
+            else
+                prev->next = current->next;
+
+            free(current);
+            return head;
+        }
+
+        prev = current;
     }
-    prev = current;
-  }
-  return head;
+
+    return head;
 }
 
-void print_backwards (list *elem) {
-  if (NULL == elem)
-    return;
+void print_forwards(struct list *head)
+{
+    struct list *next;
 
-  print_backwards (elem->next);
-  printf ("%x ", elem->data);
+    for_each(next, head)
+        printf("%x ", next->data);
+}
+
+void print_backwards(struct list *item)
+{
+    if (NULL == item)
+        return;
+
+    print_backwards(item->next);
+    printf("%x ", item->data);
 }
 \end{clst}
 
 \begin{clst}{Пример использования}{lst:list-usage}
-list *head = NULL;
+struct list *head = NULL;
 
-head = add_front (head, new_item (1));
-head = add_front (head, new_item (2));
-head = add_front (head, new_item (3));
-head = add_end (head, new_item (4));
-head = add_end (head, new_item (5));
+head = add_front(head, make_item(1));
+head = add_front(head, make_item(2));
+head = add_front(head, make_item(3));
+head = add_back(head, make_item(4));
+head = add_back(head, make_item(5));
 
-print_backwards (head);
-printf ("\n");
+print_forwards(head);
+printf("\n");
+print_backwards(head);
+printf("\n");
 
-head = remove_item (head, 3);
-head = remove_item (head, 1);
-head = remove_item (head, 5);
+head = remove_item(head, 3);
+head = remove_item(head, 1);
+head = remove_item(head, 5);
 
-print_backwards (head);
-printf ("\n");
+print_forwards(head);
+printf("\n");
+print_backwards(head);
+printf("\n");
 \end{clst}
 
 \section{Бинарные деревья поиска}
