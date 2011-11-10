@@ -426,64 +426,67 @@ printf("\n");
 Примером вырожденного случая является бинарное дерево поиска, содержащие элементы от $1..10$, вставленных по порядку.
 
 \begin{clst}{Некоторые операции}{lst:bst-impl}
-typedef struct tree tree;
 struct tree {
-  int data;
-  tree *left;
-  tree *right;
+    int data;
+    struct tree *left;
+    struct tree *right;
 };
 
-tree *new_item (int data) {
-  tree *new = (tree *) malloc (sizeof (tree));
+struct tree *make_node(int data)
+{
+    struct tree *node = (struct tree *) malloc(sizeof(struct tree));
 
-  new->data = data;
-  new->left = NULL;
-  new->right = NULL;
+    node->data = data;
+    node->left = NULL;
+    node->right = NULL;
 
-  return new;
+    return node;
 }
 
-tree *insert (tree *root, tree *new) {
-  if (NULL == root)
-    return new;
+struct tree *insert(struct tree *root, struct tree *node)
+{
+    if (NULL == root)
+        return node;
 
-  if (root->data < new->data)
-    root->right = insert (root->right, new);
-  else if (root->data > new->data)
-    root->left = insert (root->left, new);
-  /* skipping items that are already in the tree */
+    if (root->data < node->data)
+        root->right = insert(root->right, node);
+    else if (root->data > node->data)
+        root->left = insert(root->left, node);
+    /* skipping items that are already in the struct tree */
 
-  return root;
+    return root;
 }
 
-void apply_preorder (tree *root, void (*fn) (tree *)) {
-  if (NULL == root)
-    return;
+void apply_fn_preorder(struct tree *root, void (*fn)(struct tree *))
+{
+    if (NULL == root)
+        return;
 
-  (*fn) (root);
-  apply_preorder (root->left, fn);
-  apply_preorder (root->right, fn);
+    fn(root);
+    apply_fn_preorder(root->left, fn);
+    apply_fn_preorder(root->right, fn);
 }
 
-void print_tree (tree *root) {
-  apply_preorder (root, &print_tree_aux);
+void print_node(struct tree *node) {
+    printf("%d\n", node->data);
 }
 
-void print_tree_aux (tree *root) {
-  printf ("%d\n", root->data);
+void print_tree(struct tree *root)
+{
+    apply_fn_preorder(root, &print_node);
 }
 \end{clst}
 
 \begin{clst}{Пример использования}{lst:bst-usage}
-tree *root = NULL;
+struct tree *root = NULL;
 
-root = insert (root, new_item (8));
-root = insert (root, new_item (3));
-root = insert (root, new_item (1));
-root = insert (root, new_item (6));
-root = insert (root, new_item (10));
+root = insert(root, make_node(8));
+root = insert(root, make_node(3));
+root = insert(root, make_node(1));
+root = insert(root, make_node(6));
+root = insert(root, make_node(10));
 
-print_tree (root);
+print_tree(root);
 \end{clst}
 
 \section{Бинарные пирамиды}
