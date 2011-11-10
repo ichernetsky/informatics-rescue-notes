@@ -97,10 +97,8 @@ int binary_search_rec (int elem, int array[], size_t length)
 }
 \end{clst}
 
-\section{Сортировка}
-\label{sec:sorting}
-
-\subsection{Быстрая сортировка}
+\section{Быстрая сортировка}
+\label{sec:qsort}
 
 Она же \emph{quicksort}. Алгоритм состоит из следующих этапов:
 \begin{itemize}
@@ -150,42 +148,6 @@ void quicksort(int a[], int n)
 
     quicksort(a, last);
     quicksort(a + last + 1, n - last - 1);
-}
-\end{clst}
-
-\subsection{Пирамидальная сортировка}
-
-Она же \emph{heapsort}. Алгоритм состоит из следующих шагов:
-\begin{itemize}
-  \item Создается невозрастающая бинарная пирамида in-place.
-  \item Первый элемент (максимальный) меняется с последним. Подмассив $[1..(n - 1)]$ легко преобразуется в пирамиду. Повторять эти действия пока необходимо.
-\end{itemize}
-
-\begin{center}
-  \begin{tabular}{lc}
-    \toprule
-    Случай & Стоимость \\
-    \midrule
-    Худший & $\Theta(n \log n)$ \\
-    Лучший & $\Omega(n), O(n \log n)$ \\
-    В среднем & $\Theta(n \log n)$ \\
-    \bottomrule
-  \end{tabular}
-\end{center}
-
-\begin{clst}{Реализация}{lst:heapsort}
-void heapsort(struct binheap *heap)
-{
-    int size = heap->size;
-
-    build_max_heap(heap);
-    for (int i = size - 1; i > 0; i--) {
-        swap(heap->data, 0, i);
-        heap->size -= 1;
-        max_heapify(heap, 0);
-    }
-
-    heap->size = size;
 }
 \end{clst}
 
@@ -594,6 +556,43 @@ struct binheap heap = {
 build_max_heap(&heap);
 for (i = 0; i < heap.size; i++)
     printf("%d ", heap.data[i]);
+\end{clst}
+
+\section{Пирамидальная сортировка}
+\label{sec:heapsort}
+
+Она же \emph{heapsort}. Алгоритм состоит из следующих шагов:
+\begin{itemize}
+  \item Создается невозрастающая бинарная пирамида in-place.
+  \item Первый элемент (максимальный) меняется с последним. Подмассив $[1..(n - 1)]$ легко преобразуется в пирамиду. Повторять эти действия пока необходимо.
+\end{itemize}
+
+\begin{center}
+  \begin{tabular}{lc}
+    \toprule
+    Случай & Стоимость \\
+    \midrule
+    Худший & $\Theta(n \log n)$ \\
+    Лучший & $\Omega(n), O(n \log n)$ \\
+    В среднем & $\Theta(n \log n)$ \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\begin{clst}{Реализация}{lst:heapsort}
+void heapsort(struct binheap *heap)
+{
+    int size = heap->size;
+
+    build_max_heap(heap);
+    for (int i = size - 1; i > 0; i--) {
+        swap(heap->data, 0, i);
+        heap->size -= 1;
+        max_heapify(heap, 0);
+    }
+
+    heap->size = size;
+}
 \end{clst}
 
 \section{Очереди с приоритетом}
