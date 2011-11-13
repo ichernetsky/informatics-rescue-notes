@@ -1,73 +1,73 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 
-#define HTABLE_SIZE 20
-#define MULTIPLIER  31
+#define HTABLE_SIZE   20
+#define MULTIPLIER    31
 
-typedef struct item item;
 struct item {
-  char *name;
-  int value;
-  item *next;
+    char *name;
+    int value;
+    struct item *next;
 };
 
-item *htable[HTABLE_SIZE];
+struct item *make_item(char *name, int value)
+{
+    struct item *item = (struct item *) malloc(sizeof(struct item));
 
-item *new_item (char *, int);
-item *lookup (char *, int, int);
-unsigned int hash (char *);
+    item->name = name;
+    item->value = value;
+    item->next = NULL;
 
-int main (void) {
-  char *strings[] = { "string1", "string2", "string3",
-                      "string4", "string5" };
-  int i;
-  item *it;
-
-  for (i = 0; i < 3; i++)
-    lookup (strings[i], 1, i + 1);
-  for (i = 0; i < 5; i++) {
-    it = lookup (strings[i], 0, 0);
-    if (it)
-      printf ("%s in hash table, value = %d\n", it->name, it->value);
-    else
-      printf ("%s somewhere else\n", strings[i]);
-  }
-
-  return EXIT_SUCCESS;
+    return item;
 }
 
-item *new_item (char *name, int value) {
-  item *new = (item *) malloc (sizeof (item));
+unsigned int hash(char *str)
+{
+    unsigned int h = 0;
+    unsigned char *p = (unsigned char *) str;
 
-  new->name = name;
-  new->value = value;
-  new->next = NULL;
-
-  return new;
+    for (; *p != '\0'; p++)
+        h = MULTIPLIER * h + *p;
+    return h % HTABLE_SIZE;
 }
 
-item *lookup (char *name, int create, int value) {
-  int h = hash (name);
-  item *i = htable[h];
+struct item *lookup(struct item *htable[], char *name, bool create, int value)
+{
+    int h = hash(name);
+    struct item *i = htable[h];
 
-  for (; i != NULL; i = i->next)
-    if (strcmp (name, i->name) == 0)
-      return i;
+    for (; i != NULL; i = i->next)
+        if (strcmp (name, i->name) == 0)
+            return i;
 
-  if (create) {
-    i = new_item (name, value);
-    i->next = htable[h];
-    htable[h] = i;
-  }
-  return i;
+    if (create) {
+        i = make_item(name, value);
+        i->next = htable[h];
+        htable[h] = i;
+    }
+    return i;
 }
 
-unsigned int hash (char *str) {
-  unsigned int h = 0;
-  unsigned char *p = (unsigned char *) str;
+int main (void)
+{
+    struct item *htable[HTABLE_SIZE] = { NULL };
 
-  for (; *p != '\0'; p++)
-    h = MULTIPLIER * h + *p;
-  return h % HTABLE_SIZE;
+    char *strings[] = { "string1", "string2", "string3",
+                        "string4", "string5" };
+    int i;
+    struct item *it;
+
+    for (i = 0; i < 3; i++)
+        lookup(htable, strings[i], true, i + 1);
+    for (i = 0; i < 5; i++) {
+        it = lookup(htable, strings[i], false, 0);
+        if (it)
+            printf ("%s in hash table, value = %d\n", it->name, it->value);
+        else
+            printf ("%s somewhere else\n", strings[i]);
+    }
+
+    return 0;
 }
