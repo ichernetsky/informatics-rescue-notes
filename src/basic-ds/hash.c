@@ -39,7 +39,7 @@ struct item *lookup(struct item *htable[], char *name, bool create, int value)
     struct item *i = htable[h];
 
     for (; i != NULL; i = i->next)
-        if (strcmp (name, i->name) == 0)
+        if (strcmp(name, i->name) == 0)
             return i;
 
     if (create) {
@@ -50,7 +50,7 @@ struct item *lookup(struct item *htable[], char *name, bool create, int value)
     return i;
 }
 
-int main (void)
+int main(void)
 {
     struct item *htable[HTABLE_SIZE] = { NULL };
 
@@ -64,9 +64,9 @@ int main (void)
     for (i = 0; i < 5; i++) {
         it = lookup(htable, strings[i], false, 0);
         if (it)
-            printf ("%s in hash table, value = %d\n", it->name, it->value);
+            printf("%s in hash table, value = %d\n", it->name, it->value);
         else
-            printf ("%s somewhere else\n", strings[i]);
+            printf("%s somewhere else\n", strings[i]);
     }
 
     return 0;
