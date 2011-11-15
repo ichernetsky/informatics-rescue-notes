@@ -875,7 +875,7 @@ unsigned long fib_fast(unsigned long n)
 
 Можно избавиться от необходимости использования $\Theta(n)$ памяти, если приметить, что для вычисления $F_i$ нужно только два вычисленных значения $F_{i - 1}$ и $F_{i - 2}$.
 
-\begin{clst}{Быстрая реализация без дополнительного использованя памяти}{}
+\begin{clst}{Быстрая реализация без дополнительного использования памяти}{}
 unsigned long fib_fastest(unsigned long n)
 {
     unsigned long t[] = { 0UL, 1UL };
@@ -891,6 +891,125 @@ unsigned long fib_fastest(unsigned long n)
     }
 
     return t[1];
+}
+\end{clst}
+
+\subsection{Размен денег}
+Пусть имеются копейки различных достоинств $K = \left\{ k_0, k_1, ..., k_k \right\}$, $k_i \in \mathbb{N}$, и $k_0 = 1$ коп. всегда. Для примера зафиксируем следующие номиналы: $k_0 = 1$ коп., $k_1 = 5$ коп., $k_2 = 10$ коп., $k_3 = 25$ коп.
+
+Условимся, что элементы $K$ упорядочены, то есть $k_k > k_{k - 1} > ... > k_0$. Также количество копеек любого достоинства неограничено.
+
+Поставленная задача — найти наименьший набор копеек, которым можно разменять сумму в $n$ копеек.
+
+\textbf{Структура оптимального решения}. Обозначим через $C_{i, j}$ — наименьший набор копеек достоинств $k_0, k_1, ..., k_i$, которым можно разменять сумму $j$. Тогда сделать размен $C_{i, j}$ можно двумя способами:
+
+\begin{enumerate}
+  \item Сделать размен, не используя копейки достоинства $k_i$ (даже если и возможно её использование), то есть \[ C_{i, j} = C_{i - 1, j}. \]
+  \item Использовать копейку достоинства $k_i$ и попробовать разменять сумму за вычетом номинала этой копейки, то есть \[ C_{i, j} = 1 + C_{i, j - k_i}. \]
+\end{enumerate}
+
+Тогда оптимальное решение примет вид \[ C_{i, j} = min(C_{i - 1, j}, 1 + C_{i, j - k_i}). \]
+
+\textbf{Рекурсивное определение значения оптимального решения}. Из предыдущего рассуждения рекурсивное определение довольно очевидно, если держать в говове, что нулевая сумма не разменивается никоим образом и что сумму $j$ мы можем разменять $j$ копейками достоинства $1$ коп.:
+
+\[
+C_{i, j} = \left\{
+  \begin{array}{l l}
+    \infty & \quad \text{при} \quad j < 0\\
+    0 & \quad \text{при} \quad j = 0\\
+    j & \quad \text{при} \quad i = 0\\
+    min(C_{i - 1, j}, 1 + C_{i, j - k_i}) & \quad \text{при} \quad j \geq 1
+  \end{array} \right.
+\]
+
+\textbf{Вычисление значения оптимального решения «снизу вверх»}. Очевиднейшим образом можно построить таблицу значений $C_{i, j}$, основываясь на её рекурсивном определении.
+
+\begin{clst}{}{}
+#define array_size(a)                           \
+    (sizeof(a) / sizeof((a)[0]))                \
+
+#define min(a, b)                               \
+    ({  __typeof__(a) _a = (a);                 \
+        __typeof__(b) _b = (b);                 \
+        _a < _b ? _a : _b; })
+
+void change_coins(unsigned int n, unsigned int k, unsigned int coins[k],
+                  unsigned int solution[k][n + 1])
+{
+    unsigned int i, j;
+
+    for (i = 0; i < k; i++)
+        solution[i][0] = 0;
+    for (j = 1; j <= n; j++)
+        solution[0][j] = j;
+
+    for (i = 1; i < k; i++)
+        for (j = 1; j <= n; j++)
+            if (j < coins[i])
+                solution[i][j] = solution[i - 1][j];
+            else
+                solution[i][j] = min(solution[i - 1][j],
+                                     1 + solution[i][j - coins[i]]);
+}
+\end{clst}
+
+После выполнения \lstinline{solution[k - 1][n]} будет содержать минимальное количество копеек, необходимых для размена.
+
+\textbf{Составление оптимального решения}. Двигаясь из $C_{k, n}$ по обратному пути, можно восстановить конкретное оптимальное решение.
+
+\begin{clst}{}{}
+void recover_coins(unsigned int n, unsigned int k, unsigned int coins[k],
+                   unsigned int solution[k][n + 1], unsigned int counts[k])
+{
+    unsigned int i, j;
+
+    for (i = 0; i < k; i++)
+        counts[i] = 0;
+
+    i = k - 1;
+    j = n;
+    while (true) {
+        if (0 == j)
+            break;
+
+        if (0 == i) {
+            counts[0] += j;
+            break;
+        }
+
+        if (solution[i - 1][j] < (1 + solution[i][j - coins[i]]))
+            i -= 1;
+        else {
+            counts[i] += 1;
+            j -= coins[i];
+        }
+    }
+}
+\end{clst}
+
+\begin{clst}{Пример использования}{}
+unsigned int i, j;
+unsigned int n = 8;
+unsigned int coins[] = { 1, 4, 6 };
+unsigned int k = array_size(coins);
+unsigned int solution[k][n + 1];
+unsigned int counts[k];
+
+change_coins(n, k, coins, solution);
+
+for (i = 0; i < k; i++) {
+    for (j = 0; j <= n; j++)
+        printf("%d ", solution[i][j]);
+    printf("\n");
+}
+
+if (0 == solution[k - 1][n])
+    printf("No solution\n");
+else {
+    recover_coins(n, k, coins, solution, counts);
+
+    for (i = 0; i < k; i++)
+        printf ("%d kop.: %d\n", coins[i], counts[i]);
 }
 \end{clst}
 
