@@ -1,4 +1,4 @@
-CFLAGS = -g -pedantic -Wall -Wextra -std=c99
+CFLAGS = -g -Wall -Wextra -std=c99
 
 binaries = $(sort $(basename $(wildcard *.c)))
 
