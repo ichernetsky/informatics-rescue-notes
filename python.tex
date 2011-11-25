@@ -313,99 +313,337 @@ Decimal('5.85988')
 \end{pylst}
 
 \subsection{Последовательности}
-Четыре типа последовательности: \lstinline{string} (строки), \lstinline{unicode} (юникодные строки), \lstinline{list} (списки), \lstinline{tuple} (кортежи).
+В \emph{Python} семь типов последовательностей: \lstinline{str} (\emph{строки}), \lstinline{unicode} (\emph{юникодные строки}), \lstinline{list} (\emph{списки}), \lstinline{tuple} (\emph{кортежи}), \lstinline{bytearray}, \lstinline{buffer} и \lstinline{xrange}.\footnote{Последние три типа особо не будут рассматриваться, так как они не находят столь широкого применения, как первые четыре типа.}
 
-Все последовательности поддерживают следующие операции:
-\begin{center}
-  \begin{tabular}{lp{7.5cm}}
-    \toprule
-    Операция & Результат \\
-    \midrule
-    \texttt{x in s} & Истина, если какой-либо элемент из \texttt{s} равен \texttt{x} \\
-    \texttt{x not in s} & Истина, если ни один элемент из \texttt{s} не равен \texttt{s} \\
-    \texttt{s + t} & Сцепка \texttt{s} и \texttt{t} \\
-    \texttt{s * n} & Сцепка \texttt{s} с собой \texttt{n} раз \\
-    \texttt{s[i]} & Доступ по индексу \texttt{i} \\
-    \texttt{s[i:j]} & Срез от \texttt{i} до \texttt{j} \\
-    \texttt{s[i:j:k]} & Срез от \texttt{i} до \texttt{j} с шагом \texttt{k} \\
-    \texttt{len(s)} & Длина \texttt{s} \\
-    \texttt{min(s)} & Минимальный элемент в \texttt{s} \\
-    \texttt{max(s)} & Максимальный элемент в \texttt{s} \\
-    \bottomrule
-  \end{tabular}
-\end{center}
+Строковые литералы записываются в одинарных либо двойных кавычках: \lstinline{'foo'}, \lstinline{"foo"}. Списки записываются в квадратных скобках, посреди которых элементы разделяются запятыми: \lstinline{[1, 2, 3]}. Форма записи кортежей — элементы, разделённые запятыми; также могут присутствовать необязательные круглые скобки: \lstinline{(1, 2, 3)} и \lstinline{1, 2, 3} — эквивалентные записи. Для создания кортежа из одного элемента необходимо наличие запятой после этого элемента: \lstinline{(1,)}.
 
-\begin{pylst}{Работа с последовательностями}{}
->>> s = 'not so long string '
->>> 'l' in s, 'l' not in s
-True, False
->>> s + '...'
-'not so long string ...'
->>> s * 2
-'not so long string not so long string '
->>> s[10], s[1:6], s[1:9:2]
-'g', 'ot so', 'o ol'
->>> len(s)
-19
+В \emph{Python} нет специального синтаксиса для создания последовательностей \lstinline{bytearray}, \lstinline{buffer} и \lstinline{xrange}. Они создаются встроенными функциями \lstinline{bytearray()}, \lstinline{buffer()} и \lstinline{xrange()} соответственно.
+
+Отличительная черта \lstinline{xrange} — использование константного объёма памяти, какой бы длинной представляемая последовательноть не была. Объекты \lstinline{xrange} поддерживают итерирование, доступ по индексу и получение длины последовательности (\lstinline{len()}); но не поддерживают операции среза (\emph{slicing}), сцепки (\emph{concatenation}) и повтора (\emph{repetition}); также операторы \lstinline{in} и \lstinline{not in} и функции \lstinline{min()} и \lstinline{max()} очень неэффективны с данными объектами. Основное применение \emph{xrange} — итерирование по последовательности целых чисел:
+
+\begin{pylst}{}{}
+>>> for i in xrange(1, 10, 2):
+...     print i,
+...
+1 3 5 7 9
+\end{pylst}
+
+Последовательности делятся на \emph{изменяемые} (\emph{mutable}) и \emph{неизменяемые} (\emph{immutable}). Последовательности поддерживают следующие операции:
+
+\lstinline{x in s}. Результат — истинный, если какой либо элемент последовательности \lstinline{s} равен \lstinline{x}; иначе — ложный. В случае строк эта операция — проверка, является ли \lstinline{x} подстрокой \lstinline{s}.
+\begin{pylst}{}{}
+>>> 2 in [1, 2, 3]
+True
+>>> 'boo' in 'boozers'
+True
+\end{pylst}
+
+\lstinline{x not in s}. Операция, обратная предыдущей. Возвращает истину, если \lstinline{x} не присутствует в \lstinline{s}.
+\begin{pylst}{}{}
+>>> 4 not in [1, 2, 3]
+True
+\end{pylst}
+
+\lstinline{s + t}. Сцепка последовательностей одного типа \lstinline{s} и \lstinline{t}.
+\begin{pylst}{}{}
+>>> (1, 2, 3) + (4, 5)
+(1, 2, 3, 4, 5)
+>>> 'foo' + 'bar'
+'foobar'
+\end{pylst}
+
+\lstinline{s * n} и \lstinline{n * s}. Повтор последовательности \lstinline{n} раз. Если \lstinline{n <= 0}, то возвращается пустая последовательность. Нужно помнить, что при выполнении этой операции делается \emph{shallow}\footnote{Копирование бывает \emph{shallow} и \emph{deep}. В первом случае копируется только сама последовательность, во втором же случае — и все элементы, причём рекурсивно.} копирование.
+\begin{pylst}{}{}
+>>> [1, 2, 3] * -1
+[]
+>>> [1, 2, 3] * 0
+[]
+>>> [1, 2, 3] * 2
+[1, 2, 3, 1, 2, 3]
+
+>>> lists = [[]] * 3
+>>> lists
+[[], [], []]
+>>> lists[0].append(3)
+>>> lists
+[[3], [3], [3]]
+\end{pylst}
+
+\lstinline{s[i]}. Доступ к $i$-тому элементу последовательности \lstinline{s}. Первый элемент имеет индекс \lstinline{0}. Индекс также может быть отрицательным, в таком случае отсчёт идёт с конца последовательности. Последний элемент имеет индекс \lstinline{-1}.
+\begin{pylst}{}{}
+>>> s = list(xrange(1, 10, 3))
+>>> s
+1, 4, 7
+>>> s[2]
+7
+>>> s[-2]
+4
+\end{pylst}
+
+\lstinline{s[i:j]}. Срез последовательности, который состоит из элементов, индекс которых больше либо равен \lstinline{i} и меньше \lstinline{j}. Оба индекса могут отсутствовать. Если отсутствует \lstinline{i}, то элементы берутся начиная с первого; если же — \lstinline{j}, то элементы обрабатываются до конца последовательности.
+
+\lstinline{s[i:j:k]}. Также срез, но уже с шагом \lstinline{k}.
+\begin{pylst}{}{}
+>>> s = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+>>> s[3:-1]
+[3, 4, 5, 6, 7, 8]
+>>> s[3:]
+[3, 4, 5, 6, 7, 8, 9]
+>>> s[3:-1:2]
+[3, 5, 7]
+>>> s[:]
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+\end{pylst}
+
+\lstinline{len(s)}. Возвращает количество элементов в последовательности \lstinline{s}.
+\begin{pylst}{}{}
+>>> len(xrange(10))
+10
+\end{pylst}
+
+\lstinline{min(s)} и \lstinline{max(s)}. Соответственно минимальный и максимальный элементы последовательности \lstinline{s}.
+\begin{pylst}{}{}
+>>> s = [4, 1, 9, 5, 6]
+>>> min(s)
+1
+>>> max(s)
+9
+\end{pylst}
+
+\lstinline{s.index(x[, start[, end]])}. Возвращает индекс первого элемента слева, который равен \lstinline{x}, в последовательности \lstinline{s}. Необязательные аргументы \lstinline{start} и \lstinline{end} указывают интервал поиска.
+\begin{pylst}{}{}
+>>> s = [9, 4, 1, 8]
+>>> s.index(1)
+2
+\end{pylst}
+
+\lstinline{s.count(x)}. Возвращает количество элементов последовательности \lstinline{s}, которые равны \lstinline{x}. Необязательные аргументы \lstinline{start} и \lstinline{end} указывают интервал поиска.
+\begin{pylst}{}{}
+>>> s = [1, 2, 1, 2, 3]
+>>> s.count(1)
+2
+\end{pylst}
+
+\subsubsection{Операции над изменяемыми последовательностями}
+Нижеперечисленные операции относятся к изменяемым последовательностям, в текущих реализациях \emph{Python} это списки и \lstinline{bytearray}.
+
+\lstinline{s[i] = x}. Заменяет \lstinline{i}-тый элемент последовательности на \lstinline{x}.
+\begin{pylst}{}{}
+>>> s = [1, 2, 3]
+>>> s[1] = 4
+>>> s
+[1, 4, 3]
+\end{pylst}
+
+\lstinline{s[i:j] = t}. Заменяет срез элементами последовательности \lstinline{t}.
+\begin{pylst}{}{}
+>>> s = [1, 2, 7, 8]
+>>> s[:2] = [2, 3]
+>>> s
+[2, 3, 7, 8]
+
+>>> s[2:2] = [4, 5, 6]
+[2, 3, 4, 5, 6, 7, 8]
+
+>>> s[1:6] = []
+[2, 8]
+\end{pylst}{}
+
+\lstinline{s[i:j:k] = t}. То же самое поведение, что и у предыдущей операции, но на этот раз длина \lstinline{t} должна быть равна длине среза.
+\begin{pylst}{}{}
+>>> s = [1, 1, 3, 3]
+>>> s[1::2] = [2, 4]
+>>> s
+[1, 2, 3, 4]
+\end{pylst}
+
+\lstinline{del s[i:j]} и \lstinline{del s[i:j:k]}. Удаляет элементы среза из последовательности \lstinline{s}.
+\begin{pylst}{}{}
+>>> s = [1, 2, 3, 4, 5]
+>>> del s[-1]
+>>> s
+[1, 2, 3, 4]
+
+>>> del[::2]
+>>> s
+[2, 4]
+\end{pylst}
+
+\lstinline{s.append(x)}. Добавляет \lstinline{x} в конец последовательности \lstinline{s}.
+\begin{pylst}{}{}
+>>> s = [1, 2]
+>>> s.append(3)
+>>> s
+[1, 2, 3]
+\end{pylst}
+
+\lstinline{s.extend(t)}. Добавляет все элементы последовательности \lstinline{t} в конец последовательности \lstinline{s}.
+\begin{pylst}{}{}
+>>> s = [1, 2]
+>>> s.extend([3, 4])
+>>> s
+[1, 2, 3, 4]
+\end{pylst}
+
+\lstinline{s.insert(i, x)}. Вставляет \lstinline{x} до элемента в последовательности с индексом \lstinline{i}.
+\begin{pylst}{}{}
+>>> s = [1, 2]
+>>> s.insert(0, 0)
+>>> s
+[0, 1, 2]
+\end{pylst}
+
+\lstinline{s.pop([i])}. Удаляет элемент с индексом \lstinline{i} из последовательности. Если индекс не перадан при вызове, то берётся последний элемент.
+\begin{pylst}{}{}
+>>> s = [1, 2, 3, 4]
+>>> s.pop()
+4
+>>> s
+[1, 2, 3]
+>>> s.pop(1)
+2
+>>> s
+[1, 3]
+\end{pylst}
+
+\lstinline{s.remove(x)}. Удаляет из последовательности первый встреченный элемент, который равен \lstinline{x}.
+\begin{pylst}{}{}
+>>> s = [1, 3, 2, 3, 4]
+>>> s.remove(3)
+>>> s
+[1, 2, 3, 4]
+\end{pylst}
+
+\lstinline{s.reverse()}. Переворачивает последовательность \emph{in-place}.
+\begin{pylst}{}{}
+>>> s = [1, 2, 3]
+>>> s.reverse()
+>>> s
+[3, 2, 1]
+\end{pylst}
+
+\lstinline{s.sort([cmp[, key[, reverse]]])}. Сортирует последовательность \emph{in-place}. Стабильно. Необязательный параметр \lstinline{cmp} должен быть функцией двух аргументов, которая будет использоваться для сравнения элементов последовательности при сортировке. Функция должна возвращать отрицательное целое, нуль или положительное целое число, если первый элемент меньше, равен или больше второго соответственно. Параметр \lstinline{key} определяет функцию одного аргумента, которая будет использоваться для получения ключа для сравнения на основе каждого элемента последовательности. Параметр \lstinline{reverse} — булева типа. Если он равен \lstinline{True}, то результат сравнения будет заменяться на обратный.
+\begin{pylst}{}{}
+>>> s = ['C', 'd', 'E', 'A', 'b', 'f']
+>>> s.sort()
+>>> s
+['A', 'C', 'E', 'b', 'd', 'f']
+
+>>> s = ['C', 'd', 'E', 'A', 'b', 'f']
+>>> s.sort(key=lambda x: x.lower())
+>>> s
+['A', 'b', 'C', 'd', 'E', 'f']
+
+>>> s = ['C', 'd', 'E', 'A', 'b', 'f']
+>>> s.sort(key=lambda x: x.lower(), reverse=True)
+>>> s
+['f', 'E', 'd', 'C', 'b', 'A']
 \end{pylst}
 
 \subsubsection{Строки}
-Строка в Python --- неизменяемый тип данных. Все операции над последовательностями работают и со строками. Ниже проиллюстрированы часто употребляемые методы:
-\begin{pylst}{}{}
->>> s = 'In the very beginning...'
->>> s.count('in')
-2
->>> s.startswith('in')
-False
->>> ', '.join(['a', 'b', 'c'])
-'a, b, c'
->>> s.upper()
-'IN THE VERY BEGINNING...'
->>> s.partition(' ')
-('In', ' ', 'the very beginning...')
->>> s.split(' ')
-['In', 'the', 'very', 'beginning...']
->>> '%s there was actually nothing' % s
-'In the very beginning... there was actually nothing'
-\end{pylst}
-
-Строковые литералы могут быть трёх видов:
+Строка — неизменяемый тип данных. Все операции над последовательностями работают и со строками. Строковые литералы могут быть записаны двумя способами:
 \begin{itemize}
-  \item \lstinline{'string'} или \lstinline{"string"}.
-  \item \lstinline{'''string'''} или \lstinline{"""string"""}. Может занимать несколько строк.
-  \item \lstinline{r'string'} или \lstinline{r"string"}. Специальные символы не надо экранировать.
+  \item \lstinline{'string'} или \lstinline{"string"}. При использовании одинарных кавычек отпадает необходимость экранировать двойные, и наоборот.
+  \item \lstinline{'''string'''} или \lstinline{"""string"""}. Строка при этом может занимать несколько строк. Также не нужно экранировать кавычки.
+\begin{pylst}{}{}
+>>> '''This
+... makes
+... sense.'''
+'This\nmakes\nsense.'
+\end{pylst}
 \end{itemize}
 
+Также строковые литералы могут иметь следующие префиксы:
+\begin{itemize}
+  \item \lstinline{r} или \lstinline{R}. С таким префиксом обратная наклонная черта не имеет никакого специального значения\footnote{Все управляющие последовательности перечислены на \url{http://docs.python.org/reference/lexical_analysis.html\#string-literals}}. Очень удобно при записи, например, регулярных выражений.
+\begin{pylst}{}{}
+>>> print 'one\ntwo'
+one two
+>>> print r'one\ntwo'
+one\ntwo
+\end{pylst}
+  \item \lstinline{u} или \lstinline{U}. Этот префикс делает литерал юникодовым\footnote{В \emph{Python} 3.x все строки являются юникодовыми; начиная с этой версии типа \lstinline{unicode} нет вообще, а тип \lstinline{str} является тем, что есть \lstinline{unicode} в версии 2.x.}.
+\end{itemize}
+
+Для форматирования строк в \emph{Python} есть оператор \lstinline{%} и метод \lstinline{format(*args, **kwargs)}\footnote{В версии 3.x комильфо способом форматирования является метод \lstinline{format}, поэтому следует использовать его.}. Синтаксис и все спецификаторы форматирования, определение собственных спецификаторов и т. д. описаны в \emph{PEP 3101}\footnote{\url{http://www.python.org/dev/peps/pep-3101/}}. Здесь же ограничимся некоторыми примерами, из которых основная суть наглядно ясна:
+
+\begin{pylst}{}{}
+>>> 'My name is {0[name]}'.format(dict(name='Fred'))
+'My name is Fred'
+
+>>> '%(language)s has %(number)03d quote types.' % \
+...     { "language" : "Python", "number" : 2 }
+'Python has 002 quote types.'
+
+>>> from datetime import datetime
+>>> 'Today is: {0:%a %b %d %H:%M:%S %Y}'.format(datetime.now())
+'Today is: Fri Nov 25 18:11:23 2011'
+\end{pylst}
+
+В \emph{Python} используется \emph{UTF-8} для представления юникодовых строк. У строк есть методы \lstinline{encode} и \lstinline{decode} для преобразования строк из и в различные кодировки.
+
+\lstinline{s.encode([encoding[, errors]])}. Кодирует строку \lstinline{s}, используя кодировку \lstinline{encoding}. Параметр \lstinline{errros} может быть равен \lstinline{'strict'} (в таком случае будет создаваться исключение \lstinline{UnicodeEncodeError} при ошибках кодирования), \lstinline{'ignore'}, \lstinline{'replace'}, как и другие значения, специфичные для конкретных кодировок.
+
+\lstinline{s.decode([encoding[, errors]])}. Декодирует строку \lstinline{s}, используя кодировку \lstinline{encoding}. Параметры могут принимать те же значения, что и для метода \lstinline{encode}, с тем лишь отличием, что исключение — \lstinline{UnicodeDecodeError}.
+
+Ниже представлены часто употребляемые методы строк:
+
+\lstinline{s.startswith(prefix[, start[, end]])}. Проверяет, начинается ли строка \lstinline{s} с префикса \lstinline{prefix}. Параметрами \lstinline{start} и \lstinline{end} можно задать интервал проверки. Параметр \lstinline{prefix} может быть кортежом префиксов.
+\begin{pylst}{}{}
+>>> 'substring'.startswith('sub')
+True
+\end{pylst}
+
+\lstinline{s.endswith(suffix[, start[, end]])}. Проверяет, заканчивается ли строка \lstinline{s} строкой \lstinline{suffix}. В остальном значения параметров такие же, как и для метода \lstinline{startswith}.
+
+\lstinline{s.strip([chars])}. Удаляет с обоих концов строки \lstinline{s} либо пробельные символы, либо символы из строки \lstinline{chars}.
+\begin{pylst}{}{}
+>>> '      centered      '.strip()
+'centered'
+\end{pylst}
+
+\lstinline{s.lower()} и \lstinline{s.upper()}. Преобразуют строку к нижнему и верхнему регистру соответственно.
+\begin{pylst}{}{}
+>>> 'FOObar'.lower()
+'foobar'
+\end{pylst}
+
+\lstinline{s.split([sep[, maxsplit]])}. Разбивает строку по разделителю \lstinline{sep} и возвращает список полученных элементов. Если же параметр \lstinline{sep} не задан, то разбивается по пробельным символам, причём подряд идущие пробельные символы считаются за один, а пробельные символы на концах строк просто удаляются. Количество разбиений можно ограничить параметром \lstinline{maxsplit}.
+\begin{pylst}{}{}
+>>> '1,2,3'.split(',')
+['1', '2', '3']
+>>> '1,,3'.split(',')
+['1', '', '3']
+>>> ' 1    2  3 '.split()
+['1', '2', '3']
+>>> ' 1    2  3 '.split(None, 1)
+['1', '2  3 ']
+\end{pylst}
+
+\lstinline{s.join(iterable)}. Сцепляет строки, которые возвращает итерируемый объект \lstinline{iterable}, с разделителем \lstinline{s}.
+\begin{pylst}{}{}
+>>> ', '.join(str(i) for i in xrange(10))
+'0, 1, 2, 3, 4, 5, 6, 7, 8, 9'
+\end{pylst}
+
 \subsubsection{Списки}
-Список в Python --- изменяемая структура данных. Все операции над последовательностями применимы и к спискам. В таблице~\ref{tbl:py-listops} приведены некоторые операции, специфичные для списков.
-\begin{table}[h!]
-  \begin{center}
-    \caption{Дополнительные операции над списками\label{tbl:py-listops}}
-    \begin{tabular}{lp{9cm}}
-      \toprule
-      Операция & Результат \\
-      \midrule
-      \texttt{s[i] = x} & Замещает элемент на позиции \texttt{i} переменной \texttt{x} \\
-      \texttt{s[i:j] = t} & Срез от \texttt{i} до \texttt{j} замещается содержимым итератора \texttt{t} \\
-      \texttt{del s[i:j]} & То же, что и \texttt{s[i:j] = []} \\
-      \texttt{s[i:j:k] = t} & Элементы \texttt{s[i:j:k]} замещаются содержимым \texttt{t} \\
-      \texttt{del s[i:j:k]} & Удаляет элементы \texttt{s[i:j:k]} из списка \\
-      \texttt{s.append(x)} & Добавляет элемент в конец списка \\
-      \texttt{s.extend(x)} & То же самое, что и \texttt{s[len(s):len(s)] = x} \\
-      \texttt{s.insert(i, x)} & То же самое, что и \texttt{s[i:i] = [x]} \\
-      \texttt{s.pop([i])} & То же самое, что и \texttt{x = s[i]; del s[i]; return x} \\
-      \texttt{s.remove(x)} & То же самое, что и \texttt{del s[s.index(x)]} \\
-      \bottomrule
-    \end{tabular}
-  \end{center}
-\end{table}
+Список в \emph{Python} — изменяемая структура данных. Все операции над последовательностями применимы к спискам. Списки реализованы с помощью расширяемых массивов; этот факт нужно не упускать из виду при работе со списками. Так, вставка в начало списка не выполняется за $\Theta(1)$, как ожидается исходя из названия, но за $\Theta(n)$.
 
 \subsubsection{Кортежи}
-Кортеж --- это неизменяемая последовательность элементов. Нельзя ни удалять элементы из кортежа, ни добавлять, ни изменять. Примеры создания кортежей:
+Кортеж — это неизменяемая последовательность элементов. Нельзя ни удалять элементы из кортежа, ни добавлять, ни изменять. Примеры создания кортежей:
 \begin{pylst}{}{}
 >>> tuple([1, 2, 3])
 (1, 2, 3)
 >>> ('a', 'b', 'c')
+('a', 'b', 'c')
+\end{pylst}
+
+Объекты можно упаковывать (\emph{packing}) в кортеж, но можно и проделать обратную операцию (\emph{unpacking}):
+\begin{pylst}{}{}
+>>> t = 1, 2, 3
+>>> a, b, c = t
+>>> b
+2
 \end{pylst}
 
 \subsection{Словари}
