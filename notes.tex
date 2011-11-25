@@ -28,6 +28,7 @@
 \usepackage{hyperref}
 \usepackage{varioref}
 \usepackage{enumerate}
+\usepackage{epigraph}
 
 \hypersetup{
   colorlinks,
@@ -36,6 +37,9 @@
   linkcolor=black,
   urlcolor=black
 }
+
+\newenvironment{epistyle}{\setlength{\parindent}{1em}}{}
+\renewcommand{\textflush}{epistyle}
 
 \DeclareCaptionFont{white}{\color{white}}
 \DeclareCaptionFormat{listing}{\colorbox{Gray}{\parbox{\textwidth}{\hspace{15pt}#1#2#3}}}
