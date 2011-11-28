@@ -647,31 +647,168 @@ True
 \end{pylst}
 
 \subsection{Словари}
-Словарь --- изменяемая структура данных. Он отображает хешируемые значения на любые объекты.
-\begin{pylst}{Примеры создания словаря}{}
-dict(one=2, two=3)
-dict({'one': 2, 'two': 3})
-dict(zip(('one', 'two'), (2, 3)))
-dict([['two', 3], ['one', 2]])
+Словарь — изменяемая структура данных. Он отображает хешируемые значения на любые объекты. Словарь можно создавать несколькими способами:
+\begin{itemize}
+  \item С помощью встроенного синтаксиса:
+\begin{pylst}{}{}
+>>> d = { 'one' : 1, 'two' : 2 }
+>>> d
+{'one': 1, 'two': 2}
 \end{pylst}
 
-Некоторые операции над словарём \texttt{d}:
-\begin{itemize}
-  \item \lstinline{d[key]}. Возвращает объект, ассоциированный с ключом \lstinline{key}. Если такового нет --- \lstinline{KeyError}.
-  \item \lstinline{d[key] = value}. Ассоциирует объект \lstinline{value} с ключом \lstinline{key}.
-  \item \lstinline{del d[key]}. Удаляет объект, ассоциированный с ключом \lstinline{key}.
-  \item \lstinline{key in d}. \lstinline{True}, если \lstinline{d} имеет ключ \lstinline{key}.
-  \item \lstinline{key not in d}. Обратно.
-  \item \lstinline{iter(d)}. Возвращает итератор по ключам словаря.
-  \item \lstinline{clear()}. Удаляет все элементы из словаря.
-  \item \lstinline{items()}. Возвращает список пар вида \lstinline{(key, value)}.
-  \item \lstinline{iteritems()}. Возвращает итератор по \lstinline{items()}.
-  \item \lstinline{iterkeys()}. Возвращает итератор по ключам.
-  \item \lstinline{itervalues()}. Возвращает итератор по ассоциированным объектам.
-  \item \lstinline{keys()}. Список всех ключей.
-  \item \lstinline{values()}. Список ассоциированных объектов.
-  \item \lstinline{update([other])}. Обновляет словарь элементами словаря \lstinline{other}.
+  \item С помощью конструктора и именованных аргументов:
+\begin{pylst}{}{}
+>>> d = dict(one=1, two=2)
+>>> d
+{'one': 1, 'two': 2}
+\end{pylst}
+
+  \item С помощью конструктора и любой последовательности, содержащей последовательности длины $2$, первый элемент которых становится ключом, а второй — значением.
+\begin{pylst}{}{}
+>>> d = dict([('one', 1), ('two', 1)])
+>>> d
+{'one': 1, 'two': 2}
+\end{pylst}
+
+  \item Словарным влючением (\emph{dict comprehension})\footnote{Появились в \emph{Python} 2.7. Аналогичны списковым включениям, которые будут рассмотрены позднее.}.
+\begin{pylst}{}{}
+>>> d = { k : v for k, v in enumerate('ABCD') if v not in 'CB' }
+>>> d
+{0: 'A', 3: 'D'}
+\end{pylst}
 \end{itemize}
+
+Ключами не могут быть изменяемые объекты, как списки и другие словари, так как они сравниваются структурно, а структура их может меняться (например, мы можем добавить новый элемент). В то же время ключом может быть произвольный объект, так как сравнение происходит по адресу в памяти, а не структурно. Проиллюстрируем:
+\begin{pylst}{}{}
+>>> d = dict()
+>>> d[list()] = 1
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: unhashable type: 'list'
+
+>>> class dummy(object):
+...     def __init__(self):
+...         self._list = list()
+...
+>>> d[dummy()] = 1
+>>> d
+{<__main__.dummy object at 0x7f922fb3a410>: 1}
+\end{pylst}
+
+Ниже рассмотрены некоторые операции над словарями:
+
+\lstinline{d[key]}. Возвращает объект, ассоциированный с ключом \lstinline{key}. Если такового нет — исключение \lstinline{KeyError}.
+\begin{pylst}{}{}
+>>> d = dict(one=1)
+>>> d['one']
+1
+\end{pylst}
+
+\lstinline{d[key] = value}. Ассоциирует объект \lstinline{value} с ключом \lstinline{key}.
+\begin{pylst}{}{}
+>>> d = dict()
+>>> d['fruits'] = ('banana', 'apple', 'pear')
+>>> d
+{'fruits': ('banana', 'apple', 'pear')}
+\end{pylst}
+
+\lstinline{del d[key]}. Удаляет объект, ассоциированный с ключом \lstinline{key}.
+\begin{pylst}{}{}
+>>> d = dict(one=1, two=2)
+>>> del d['two']
+>>> d
+{'one': 1}
+\end{pylst}
+
+\lstinline{key in d} и \lstinline{key not in d}. Проверяют наличие или отсутствие соответственно ключа \lstinline{key} в словаре \lstinline{d}.
+\begin{pylst}{}{}
+>>> d = dict(one=1, two=2)
+>>> 'one' in d
+True
+>>> 'three' in d
+False
+\end{pylst}
+
+\lstinline{d.clear()}. Удаляет все элементы из словаря.
+\begin{pylst}{}{}
+>>> d = dict(one=1, two=2)
+>>> d.clear()
+>>> d
+{}
+\end{pylst}
+
+\lstinline{d.items()} и \lstinline{d.iteritems()}. Метод \lstinline{items()} возвращает список пар вида \lstinline{(key, value)}. Метод же \lstinline{iteritems()} возвращает итератор по тем же парам.
+\begin{pylst}{}{}
+>>> d = dict(one=1, two=2)
+
+>>> d.items()
+[('two', 2), ('one', 1)]
+>>> d.iteritems()
+<dictionary-itemiterator object at 0x7f922fb88f18>
+
+>>> for k, v in d.iteritems():
+...     print k, ':', v
+...
+two : 2
+one : 1
+\end{pylst}
+
+\lstinline{d.keys()} и \lstinline{d.iterkeys()}. Метод \lstinline{keys()} возвращает список всех ключей. Метод \lstinline{iterkeys()} возвращает итератор по ключам.
+\begin{pylst}{}{}
+>>> d = dict(one=1, two=2)
+
+>>> d.keys()
+['two', 'one']
+>>> d.iterkeys()
+<dictionary-keyiterator object at 0x7f922fb88f18>
+
+>>> for k in d.iterkeys():
+...     print k,
+...
+two one
+\end{pylst}
+
+\lstinline{d.values()} и \lstinline{d.itervalues()}. Метод \lstinline{values()} возвращает список всех значений. Метод \lstinline{itervalues()} возвращает итератор по значениям.
+\begin{pylst}{}{}
+>>> d = dict(one=1, two=2)
+
+>>> d.values()
+[2, 1]
+>>> d.itervalues()
+<dictionary-valueiterator object at 0x7f922fb88f18>
+
+>>> for v in d.itervalues():
+...     print v,
+...
+2 1
+\end{pylst}
+
+\lstinline{d.update(other)}. Обновляет словарь элементами словаря \lstinline{other}.
+\begin{pylst}{}{}
+>>> d = dict(one=1, two=2)
+>>> d.update({ 'three' : 3 })
+{'one': 1, 'three': 3, 'two': 2}
+\end{pylst}
+
+\lstinline{d.get(key[, default])}. Если в словаре есть значение для ключа \lstinline{key}, то возвращает его, иначе — \lstinline{default}, если он передан, и исключение \lstinline{KeyError}, если нет.
+\begin{pylst}{}{}
+>>> d = dict(one=1)
+>>> d.get('one', None)
+1
+>>> d.get('two', None)
+None
+\end{pylst}
+
+\lstinline{d.setdefault(key[, default])}. Если в словаре нет значения для ключа \lstinline{key}, то ассоциирует с ним значение \lstinline{default}. Если \lstinline{default} не передан при вызове, то он равняется \lstinline{None}.
+\begin{pylst}{}{}
+>>> d = dict(furniture=['chair'])
+>>> d
+{'furniture': ['chair']}
+
+>>> d.setdefault('furniture', list()).append('table')
+>>> d
+{'furniture': ['chair', 'table']}
+\end{pylst}
 
 \subsection{Множества}
 Очень похожи на математические множества. Поддерживает операции объединения, пересечения, вычитания и различные проверки. Некоторые операции:
