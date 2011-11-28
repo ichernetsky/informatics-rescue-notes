@@ -811,12 +811,147 @@ None
 \end{pylst}
 
 \subsection{Множества}
-Очень похожи на математические множества. Поддерживает операции объединения, пересечения, вычитания и различные проверки. Некоторые операции:
+Множество (\emph{set}) в \emph{Python} — неупорядоченная коллекция данных, в которой элементы не повторяются. Элементами множеств могут быть лишь хешируемые объекты. Есть два типа множеств: \lstinline{set} и \lstinline{frozenset}. \lstinline{set} — изменяемая структура данных, а \lstinline{frozenset} — нет. Создать их можно несколькими способами:
 \begin{itemize}
-  \item \lstinline{isdisjoint(other)}. Возвращает \lstinline{True}, если множества не имею одинаковых элементов.
-  \item \lstinline{issubset(other)} или \lstinline{set <= other}. Проверяет, все ли элементы первого множества присутствуют во втором.
-  \item \lstinline{issuperset(other)} или \lstinline{set >= other}. По аналогии.
+  \item С помощью встроенных функций \lstinline{set()} и \lstinline{frozenset()}.
+\begin{pylst}{}{}
+>>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
+>>> fruits = set(basket)
+>>> fruits
+set(['apple', 'banana', 'orange', 'pear'])
+\end{pylst}
+
+  \item Непустое изменяемое множество может быть создано специальным синтаксисом:
+\begin{pylst}{}{}
+>>> { 'apple', 'orange', 'apple', 'pear', 'orange', 'banana' }
+set(['apple', 'banana', 'orange', 'pear'])
+\end{pylst}
+
+  \item Изменяемое множество может быть создано множественным включением (\emph{set comprehension})\footnote{Появились \emph{Python} 2.7. Аналогичны списковым включениям, которые будут рассмотрены позднее.}.
+\begin{pylst}{}{}
+>>> s = { v for v in 'ABCDABCD' if v not in 'CB' }
+>>> s
+set(['A', 'D'])
+\end{pylst}
 \end{itemize}
+
+Множества поддерживают ожидаемый набор операций: проверка на присутствие, объединение, пересечение и т. д. Вот некоторые из них, применимые как к изменяемым, так и к неизменяемым множествам:
+
+\lstinline{len(s)}. Возвращает размер множества \lstinline{s}.
+\begin{pylst}{}{}
+>>> s = set([1, 2, 3])
+>>> len(s)
+3
+\end{pylst}
+
+\lstinline{x in s} и \lstinline{x not in s}. Проверяют, присутствует ли или не присутствует элемент \lstinline{x} в множестве \lstinline{s}.
+\begin{pylst}{}{}
+>>> s = set([1, 2, 3])
+>>> 2 in s
+True
+>>> 0 in s
+False
+\end{pylst}
+
+\lstinline{s.isdisjoint(other)}. Возвращает истину, если множество \lstinline{s} не имеет одинаковых элементов с \lstinline{other}, то есть пересечение \lstinline{s} и \lstinline{other} — пустое множество.
+\begin{pylst}{}{}
+>>> s1, s2, s3 = set([1, 2, 3]), set([4, 5, 6]), set([3, 4])
+>>> s1.isdisjoint(s2)
+True
+>>> s1.isdisjoint(s3)
+False
+\end{pylst}
+
+\lstinline{s.issubset(other)} или \lstinline{s <= other}. Проверяют, является ли \lstinline{s} подмножеством \lstinline{other}.
+\begin{pylst}{}{}
+>>> s = set([1, 2, 3])
+>>> s.issubset(s)
+True
+\end{pylst}
+
+\lstinline{s < other}. Проверяет, является ли \lstinline{s} подмножеством \lstinline{other}, причём \lstinline{s != other}.
+\begin{pylst}{}{}
+>>> s = set([1, 2, 3])
+>>> s < s
+False
+\end{pylst}
+
+\lstinline{s.issuperset(other)} или \lstinline{s >= other}. Проверяют, является ли \lstinline{other} подмножеством \lstinline{s}.
+\begin{pylst}{}{}
+>>> s = set([1, 2, 3])
+>>> s.issuperset(s)
+True
+\end{pylst}
+
+\lstinline{s > other}. Проверяет, является ли \lstinline{other} подмножеством \lstinline{s}, причём \lstinline{other != s}.
+\begin{pylst}{}{}
+>>> s = set([1, 2, 3])
+>>> s > s
+False
+\end{pylst}
+
+\lstinline{s.union(other)} или \lstinline{s | other}. Возвращают новое множество, которое является объединением обоих.
+\begin{pylst}{}{}
+>>> s1, s2 = set([1, 2]), set([2, 3])
+>>> s1.union(s2)
+set([1, 2, 3])
+\end{pylst}
+
+\lstinline{s.intersection(other)} или \lstinline{s & other}. Возвращают пересечение множеств.
+\begin{pylst}{}{}
+>>> s1, s2 = set([1, 2]), set([2, 3])
+>>> s1.intersection(s2)
+set([2])
+\end{pylst}
+
+\lstinline{s.difference(other)} или \lstinline{s - other}. Возвращают разность множеств.
+\begin{pylst}{}{}
+>>> s1, s2 = set([1, 2]), set([2, 3])
+>>> s1.difference(s2)
+set([1])
+\end{pylst}
+
+\lstinline{s.symmetric_difference(other)} или \lstinline{s ^ other}. Возвращают симметрическую разность.
+\begin{pylst}{}{}
+>>> s1, s2 = set([1, 2]), set([2, 3])
+>>> s1.symmetric_difference(s2)
+set([1, 3])
+\end{pylst}
+
+У изменяемых множеств есть следующие методы вдобавок:
+
+\lstinline{s.add(x)}. Добавляет объект \lstinline{x} в множество \lstinline{s}.
+\begin{pylst}{}{}
+>>> s = set([1, 2])
+>>> s.add(3)
+>>> s
+set([1, 2, 3])
+\end{pylst}
+
+\lstinline{s.remove(x)}. Удаляет объект \lstinline{x} из множества. Если же его в нём нет, то — исключение \lstinline{KeyError}.
+\begin{pylst}{}{}
+>>> s = set([1, 2])
+>>> s.remove(1)
+>>> s
+set([2])
+\end{pylst}
+
+\lstinline{s.discard(x)}. Удаляет объект \lstinline{x} из множества, если он там присутствует.
+\begin{pylst}{}{}
+>>> s = set([1, 2])
+>>> s.discard(1)
+>>> s.discard(1)
+>>> s
+set([2])
+\end{pylst}
+
+\lstinline{s.clear()}. Удаляет все элементы из множества.
+\begin{pylst}{}{}
+>>> s = set([1, 2])
+>>> s.clear()
+>>> s
+set([])
+\end{pylst}
 
 \section{Операторы}
 \label{sec:py-statements}
