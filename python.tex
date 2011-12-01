@@ -957,14 +957,35 @@ set([])
 \label{sec:py-statements}
 
 \subsubsection{Оператор if}
-Общая форма оператора \lstinline{if} выглядит следующим образом:
+Общая форма оператора \lstinline{if} выглядит следующим образом\footnote{Здесь и далее при записи общей формы оператора используется нотация регулярных выражений, а именно: \lstinline{(x, y, ...)} — круглые скобки группирует то, что они обрамляют графически; \lstinline{*} означает, что запись слева может появиться ноль или более раз; \lstinline{+} — запись слева может появиться один и более раз; \lstinline{[x, y]} — то, что внутри квадратных скобок, может появиться ноль или один раз; \lstinline{x | y} — может появиться либо \lstinline{x}, либо \lstinline{y}.}:
 \begin{pylst}{}{}
 if $expression$: $suite$
 ( elif $expression$: $suite$)*
 [ else: $suite$ ]
 \end{pylst}
 
-Этот оператор вычисляет последовательно выражения $expression$ до тех пор, пока не будет найдено равное \lstinline{true}. После чего выполняется соответсвующее $suite$. Если все выражения оказались равными \lstinline{false}, то выполняются операторы и выражения из \lstinline{else} ветки. Выполняется не больше одного набора операторов и выражений ($suite$).
+Этот оператор вычисляет последовательно выражения $expression$ до тех пор, пока не будет найдено равное \lstinline{True}. После чего выполняется соответсвующее $suite$. Если все выражения оказались ложными, то выполняются операторы и выражения из \lstinline{else} ветки, если таковая присутствует.
+
+Ниже представлена функция, которая печатает, является ли переданная строка путём к директории, файлу либо чему-нибудь ещё.
+\begin{pylst}{}{}
+import os.path
+
+def whatsit(path):
+    if os.path.isdir(path):
+        print 'directory'
+    elif os.path.isfile(path):
+        print 'file'
+    else:
+        print 'something else'
+\end{pylst}
+
+Вот пример её использования:
+\begin{pylst}{}{}
+>>> whatsit('/tmp')
+directory
+>>> whatsit('/boot/grub/grub.conf')
+file
+\end{pylst}
 
 \subsubsection{Оператор while}
 Общая форма оператора \lstinline{while} выглядит следующим образом:
@@ -973,7 +994,32 @@ while $expression$: $suite_1$
 [ else: $suite_2$ ]
 \end{pylst}
 
-Выполняет $suite_1$ пока $expression$ истинно. Если в первый раз $expression$ оказалось ложно, выполняется ветка \lstinline{else}, после чего цикл завершается. Оператор \lstinline{break} завершает цикл без выполнения ветки \lstinline{else}. Оператор \lstinline{continue} передает управление на начало цикла.
+Оператор \lstinline{while} выполняет $suite_1$, пока $expression$ истинно. Как только $expression$ оказалось ложно, выполняется ветка \lstinline{else}, после чего цикл завершается.
+\begin{pylst}{}{}
+>>> expression = [3, 2, 1]
+>>> while expression:
+...     print 'suite-1:', expression.pop()
+... else:
+...     print 'suite-2'
+...
+suite-1: 1
+suite-1: 2
+suite-1: 3
+suite-2
+\end{pylst}
+
+Оператор \lstinline{break} завершает цикл без выполнения ветки \lstinline{else}.
+\begin{pylst}{}{}
+>>> while True:
+...     print 'suite-1'
+...     break
+... else:
+...     print 'suite-2'
+...
+suite-1
+\end{pylst}
+
+Оператор \lstinline{continue} передает управление на начало цикла.
 
 \subsubsection{Оператор for}
 Общая форма оператора \lstinline{for} выглядит следующим образом:
@@ -983,36 +1029,179 @@ for $variable$ in $expression$: $suite_1$
 \end{pylst}
 
 $expression$ вычисляется единожды. Оно должно вычислятся в итерируемый объект. Затем $suite_1$ вычисляется столько раз, сколько объектов в итерируемом объекте, при этом переменной $variable$ присваивается очередной объект. По завершении вычисляется ветка \lstinline{else}.
+\begin{pylst}{}{}
+>>> for i in xrange(3):
+...     print 'suite-1:', i
+... else:
+...     print 'suite-2'
+...
+suite-1: 0
+suite-1: 1
+suite-1: 2
+suite-2
+\end{pylst}
 
-Оператор \lstinline{break} завершает цикл без выполнения ветки \lstinline{else}. Оператор \lstinline{continue} передает управление на начало цикла или, если больше нет очередного объекта, на ветку \lstinline{else}.
+Оператор \lstinline{break} завершает цикл без выполнения ветки \lstinline{else}.
+\begin{pylst}{}{}
+>>> for i in xrange(3):
+...     print 'suite-1:', i
+...     if i > 1:
+...         break
+... else:
+...     print 'suite-2'
+...
+suite-1: 0
+suite-1: 1
+\end{pylst}
+
+Оператор \lstinline{continue} передает управление на начало цикла или, если больше нет очередного объекта, на ветку \lstinline{else}.
 
 \subsubsection{Оператор try}
 Общая форма оператора \lstinline{try} выглядит следующим образом:
 \begin{pylst}{}{}
-try: suite
-( except [expression [ ( as | "," ) target ] ]: suite )+
-[ else: suite ]
-[ finally: suite ]
+try: $suite_1$
+( except [ $expression$ [ ( as | , ) $target$ ] ]: $suite_2$ )+
+[ else: $suite_3$ ]
+[ finally: $suite_4$ ]
 \end{pylst}
 или
 \begin{pylst}{}{}
-try: suite
-finally: suite
+try: $suite_1$
+finally: $suite_4$
 \end{pylst}
 
-Блоки \lstinline{except} определяют обработчики исключительных ситуаций. Если в блоке \lstinline{try} не возникло исключительной ситуации, то ни один из обработчиков не выполняется. В ином случае происходит поиск подходящего обработчика последовательно по блокам \lstinline{except}. Блок \lstinline{except} без выражений $expression$, если таковой присутствует, должен быть последним. При поиске выражения $expression$ вычисляются, и блок выбирается для выполнения, если объект-результат подходит к возникшему исключению, т.е. если объект является классом, который присутствует в списке наследования объекта исключения, или же кортежем, в котором хотя бы один элемент является совместимым с исключением.
+Блоки \lstinline{except} определяют обработчики исключительных ситуаций. Если при выполнении $suite_1$ не возникло исключительной ситуации, то ни один из обработчиков не выполняется.
+\begin{pylst}{}{}
+>>> try:
+...     print 'Hello.'
+... except ArithmeticError:
+...     print 'Arithmetic error occured.'
+... except:
+...     print 'Error occured.'
+...
+Hello.
+\end{pylst}
 
-Если обработчик не найден, поиск происходит в обрамляющем коде и вверх дальше по стеку, если блок \lstinline{finally} не присутсвует.
+В ином случае происходит последовательный поиск подходящего обработчика по блокам \lstinline{except}. При поиске обработчика выражения $expression$ вычисляются, и соответствующий $suite_2$ выбирается для выполнения, если результатом вычисления $expression$ является класс, который присутствует в списке наследования объекта-исключения, или же кортеж, в котором хотя бы один элемент является таким классом.
+\begin{pylst}{}{}
+>>> try:
+...     1 / 0
+... except ZeroDivisionError:
+...     print 'Illegal operation performed.'
+...
+Illegal operation performed.
+\end{pylst}
+
+Также это исключение можно словить, использую класс \lstinline{ArithmeticError}, который является базовым классом класса \lstinline{ZeroDivisionError}.
+\begin{pylst}{}{}
+>>> try:
+...     1 / 0
+... except ArithmeticError:
+...     print 'Here we catch all arithmetic errors.'
+...
+Here we catch all arithmetic errors.
+\end{pylst}
+
+Блок \lstinline{except} без выражений $expression$, если таковой присутствует, должен быть последним. Этот блок выполняется по умолчанию, если более подходящего обработчика не было найдено.
+\begin{pylst}{}{}
+>>> try:
+...     x
+... except ArithmeticError:
+...     print 'Here we catch all arithmetic errors.'
+... except:
+...     print 'Here we are catching even NameError.'
+...
+Here we are catching even NameError.
+\end{pylst}
+
+Если обработчик не найден, поиск происходит в обрамляющем коде и вверх дальше по стеку, если блок \lstinline{finally} не присутсвует. Если он присутствует, то он может бросить новое исключение, тогда старое «потеряется». Например, в следующем коде в блоке \lstinline{try} возникнет исключение \lstinline{NameError}, но блок \lstinline{finally} перехватит его и бросит новое исключение \lstinline{Exception}.
+\begin{pylst}{}{}
+>>> try:
+...     x
+... finally:
+...     raise Exception
+...
+Traceback (most recent call last):
+  File "<stdin>", line 4, in <module>
+Exception
+\end{pylst}
 
 Если при выполнении выражений $expression$ возникло исключение, то изначальное исключение отбрасывается, и начинается новый поиск для нового исключения в обрамляющем коде и вверх по стеку.
 
 Если же подходящий блок \lstinline{except} найден, то $target$, если присутствует, присваивается результат вычисления $expression$, и блок исполняется. После чего управление передается, как правило, за пределы оператора \lstinline{try}.
+\begin{pylst}{}{}
+>>> try:
+...     1 / 0
+... except Exception, e:
+...     print e
+...
+integer division or modulo by zero
+\end{pylst}
 
-В блоке обработчика можно вызвать \lstinline{sys.exc_info}, которая возвращает кортеж \lstinline{(exc_type, exc_value, exc_traceback)}, где \lstinline{exc_type} --- объект исключения, \lstinline{exc_value} --- параметры, переданные исключению, \lstinline{exc_traceback} --- traceback объект.
+Блок \lstinline{else} выполняется в том случае, если управление достигло конца блока \lstinline{try}. Исключения, возникшие в блоке \lstinline{else}, не обрабатываются предыдущими ему обработчиками.
+\begin{pylst}{}{}
+>>> try:
+...     1 + 1
+... except:
+...     print 'Error occured.'
+... else:
+...     print 'Sum done well.'
+...
+2
+Sum done well.
+\end{pylst}
 
-Блок \lstinline{else} выполняется в том случае, если управление достигло конца блока \lstinline{try}. Исключения, возникшие в блоке \lstinline{else} не обрабатываются предыдущими ему обработчиками.
+Блок \lstinline{finally} выполняется всегда независимо от того, возникла ли исключительная ситуация или нет и где: внутри блока \lstinline{try}, \lstinline{except} или же \lstinline{else}.
+\begin{pylst}{}{}
+>>> try:
+...     raise Exception
+... finally:
+...     print 'in finally'
+...
+in finally
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+Exception
+\end{pylst}
 
-Блок \lstinline{finally} выполняется всегда, где бы исключительная ситуация не возникла: внутри блок \lstinline{try}, \lstinline{except} или же \lstinline{else}.
+В обработчике можно вызвать функцию \lstinline{sys.exc_info()}, которая возвращает кортеж \lstinline{(exc_type, exc_value, exc_traceback)}, где \lstinline{exc_type} — объект исключения, \lstinline{exc_value} — параметры, переданные исключению, \lstinline{exc_traceback} — traceback объект. Всевозможные удобные функции для работы с этими объектами собраны в модуле \lstinline{traceback}. Ниже приводится банальная реализация интерпретатора \emph{Python} на \emph{Python}:
+\begin{pylst}{}{}
+import sys
+import traceback
+
+def run_user_code(envdir):
+    source = raw_input(">>> ")
+    try:
+        exec source in envdir
+    except:
+        print "Exception in user code:"
+        print '-' * 60
+        traceback.print_exc(file=sys.stdout)
+        print '-' * 60
+
+envdir = {}
+while True:
+    run_user_code(envdir)
+\end{pylst}
+
+Следом — пример сессии этого игрушечного интерпретатора:
+\begin{pylst}{}{}
+>>> 1 / 0
+Exception in user code:
+------------------------------------------------------------
+Traceback (most recent call last):
+  File "test.py", line 7, in run_user_code
+    exec source in envdir
+  File "<string>", line 1, in <module>
+ZeroDivisionError: integer division or modulo by zero
+------------------------------------------------------------
+>>> Traceback (most recent call last):
+  File "test.py", line 16, in <module>
+    run_user_code(envdir)
+  File "test.py", line 5, in run_user_code
+    source = raw_input(">>> ")
+EOFError
+\end{pylst}
 
 \subsubsection{Оператор with}
 Общая форма оператора \lstinline{with} выглядит следующим образом:
@@ -1179,7 +1368,7 @@ def f(x):
 
 def g(x):
     return 2 * x
- 
+
 >>> z = compose(g, f)
 >>> z(2)
 10
@@ -1224,7 +1413,7 @@ $4!$ можно вычислить следующим образом, испол
   \begin{tikzpicture}[level/.style={sibling distance=50mm/#1}]
     \node [circle, draw] {$*$}
       child { node [circle, draw] {$*$}
-        child { node [circle, draw] {$*$} 
+        child { node [circle, draw] {$*$}
           child { node [circle, draw] {$1$} }
           child { node [circle, draw] {$2$} } }
         child { node [circle, draw] {$3$} } }
