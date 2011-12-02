@@ -1782,8 +1782,8 @@ C D A B E F
 Есть проблема с декорированной функцией: например, её свойство \lstinline{__name__} больше не равно ее действительному имени после декорирования. Следующий декоратор, призванный декорировать другие декораторы, этот досадный недостаток устраняет.
 \begin{pylst}{}{}
 def well_behaved(decorator):
-    def new(f):
-        g = decorator(f)
+    def new(f, *args, **kwargs):
+        g = decorator(f, *args, **kwargs)
         g.__name__ = f.__name__
         g.__doc__ = f.__doc__
         g.__dict__.update(f.__dict__)
@@ -1822,6 +1822,48 @@ def dummy():
 \end{pylst}
 
 Вуаля! проблема устранена!
+
+\subsubsection{Проверка типов аргументов функции и её результата}
+Напишем два декоратора: один для проверки во время вызова типов аргументов функции, другой же — типа возвращаемого значения. Для простоты введём ограничение: пусть аргументы у функции лишь позиционные.
+\begin{pylst}{}{}
+@well_behaved
+def accepts(*types):
+    def check_types(f):
+        def wrapped(*args, **kwargs):
+            for (a, t) in zip(args, types):
+                assert isinstance(a, t), \
+                       "arg %r does not match %s" % (a, t)
+            return f(*args, **kwargs)
+        return wrapped
+    return check_types
+
+@well_behaved
+def returns(rtype):
+    def check_types(f):
+        def wrapped(*args, **kwargs):
+            result = f(*args, **kwargs)
+            assert isinstance(result, rtype), \
+                   "return value %r does not match %s" % (result, rtype)
+            return result
+        return wrapped
+    return check_types
+\end{pylst}
+
+Напишем функцию сложения двух целых чисел с проверкой типов и проверим, всё ли работает, как ожидается:
+\begin{pylst}{}{}
+@accepts(int, int)
+@returns(int)
+def add(a, b):
+    return a + b
+
+>>> add(2, 2)
+4
+>>> add(2, 2.0)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/tmp/py10971mml", line 7, in wrapped
+AssertionError: arg 2.0 does not match <type 'int'>
+\end{pylst}
 
 \section{Объектно-ориентированное программирование}
 \label{sec:py-oop}
