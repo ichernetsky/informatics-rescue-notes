@@ -1622,25 +1622,45 @@ False
 '/usr/lib64/python2.7/threading.pyc'
 \end{pylst}
 
-Модули и пакеты могут образовывать иерархию. Модули не могут содержать ни другие модули, ни другие пакеты. В то время как пакет может содержать как другие модули, так и другие пакеты. Если эту структуру отображать на файловую систему, то модулям сответствуют файлы, а пакетам --- директории.
+Модули и пакеты могут образовывать иерархию. Модули не могут содержать ни другие модули, ни другие пакеты. В то время как пакет может содержать как другие модули, так и другие пакеты. Если эту структуру отображать на файловую систему, то модулям сответствуют файлы, а пакетам — директории, в которых находиться файл \lstinline{__init__.py}. Посмотрим на часть иерархии проекта \emph{Django}:
 \begin{plainlst}{}{}
-edu
-|
-`__init__.py
- informatics
- |
- `__init__.py
-  ai.py
+django/
+       __init__.py
+       db/
+                 __init__.py
+                 backends/
+                 models/
+                 transaction.py
+                 utils.py
+       forms/
+                 __init__.py
+                 extras/
+                 fields.py
+                 forms.py
+                 ...
+       http/
+                 __init__.py
+                 multipartparser.py
+                 utils.py
+       template/
+                 __init__.py
+                 loaders/
+                 base.py
+                 context.py
+                 debug.py
+                 ...
+       ...
 \end{plainlst}
 
-Пусть в \texttt{ai.py} определен класс \lstinline{NotSoIntelligent}. Тогда все следующие операции импорта корректны:
+Вот несколько примеров использования оператора \lstinline{import} с \emph{Django}:
 \begin{pylst}{}{}
-import edu
-from edu import informatics
-from informatics import ai as infoai
-from infoai import *
+from django.db import models
+from django.http import Http404, HttpResponse
+from django.template import Context
 
-NotSoIntelligent()
+class Poll(models.Model):
+    question = models.CharField(max_length=200)
+    pub_date = models.DateTimeField('date published')
 \end{pylst}
 
 Импорт может быть относительным. Точка перед модулем значит, что путь до модуля нужно искать от того модуля, где происходит импорт. Если две точки, то начинать надо с уровня выше. И так далее. Например, если импорт \lstinline{from . import mod} происходит из модуля в пакете \lstinline{pkg}, то импортирован будет модуль \lstinline{pkg.mod}. Если же импорт \lstinline{from ..subpkg2 import mod} --- из пакета \lstinline{pkg.subpkg1}, импортирован модуль \lstinline{pkg.subpkg2.mod}.
