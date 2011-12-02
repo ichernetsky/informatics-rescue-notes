@@ -1667,6 +1667,161 @@ class Poll(models.Model):
 
 При выполненении \lstinline{from mod import *} не импортируются имена, которые начинаются с \lstinline{_}. Модули можно подгружать динамически, используя встроенную функцию \lstinline{__import__}.
 
+\section{Декораторы}
+\label{sec:py-decorators}
+\emph{Декоратор} — объект, который можно вызвать с одним аргументом. На практике декоратор — это либо функция одного аргумента, либо объект с методом \lstinline{__call__(self, f)}. Назначение декоратора — динамически «оборачивать» функцию, метод либо класс в какую-либо дополнительную функциональность. Как пример, напишем декоратор, который печатает аргументы вызываемой функции и результат её выполнения:
+\begin{pylst}{}{}
+def debug(func):
+    def wrapped(*args, **kwargs):
+        print "%s called with: %s, %s" % (func.__name__, args, kwargs)
+        ret = func(*args, **kwargs)
+        print "%s returned: %s" % (func.__name__, ret)
+        return ret
+    return wrapped
+\end{pylst}
+
+Отдекорируем им функцию увеличения аргумента на единицу:
+\begin{pylst}{}{}
+def inc(i):
+    return i + 1
+
+inc = debug(inc)
+\end{pylst}
+
+Теперь при вызове \lstinline{inc} будет печататься отладочная информация:
+\begin{pylst}{}{}
+>>> inc(1)
+inc called with: (1,), {}
+inc returned: 2
+\end{pylst}
+
+В \emph{Python} был введён специльный \lstinline{@}-синтаксис для декораторов. Предыдущее декорирование функции можно записать следующим предпочтительным и более наглядным способом:
+\begin{pylst}{}{}
+@debug
+def inc(i):
+    return i + 1
+\end{pylst}
+
+\subsection{Примеры декораторов}
+\subsubsection{Псевдокаррирование}
+Каррирование или карринг (англ. currying) в информатике — преобразование функции от пары аргументов в функцию, берущую свои аргументы по одному. Напишем декоратор, который фиксирует произвольное количество аргументов функции произвольного числа аргументов:
+\begin{pylst}{}{}
+class curried(object):
+    def __init__(self, func, *a):
+        self.func = func
+        self.args = a
+
+    def __call__(self, *a):
+        args = self.args + a
+        if len(args) < self.func.__code__.co_argcount:
+            return curried(self.func, *args)
+        else:
+            return self.func(*args)
+\end{pylst}
+
+Напишем банальнейшую функцию сложения двух чисел и отдекорируем её:
+\begin{pylst}{}{}
+@curried
+def add(a, b):
+    return a + b
+\end{pylst}
+
+Теперь функции можно передавать часть аргументов, которые будут фиксированы в «новой» функции меньшего числа аргументов:
+\begin{pylst}{}{}
+>>> add1 = add(1)
+>>> add1(2)
+3
+\end{pylst}
+
+\subsubsection{Синхронизация}
+Допустим, мы имеем функцию. Эту функцию исполняют множество потоков, но в каждый момент времени выполняться должен лишь один поток. Для этого напишем декоратор, который захватывает взаимное исключение (lock) перед началом выполнения функции и освобождает его при завершении функции.
+\begin{pylst}{}{}
+def synchronized(lock):
+    def wrap(f):
+        def sync(*args, **kwargs):
+            with lock:
+                return f(*args, **kwargs)
+        return sync
+    return wrap
+\end{pylst}
+
+Для иллюстрации напишем функцию вывода на консоль заданных сообщений, которую отдекорируем \lstinline{synchronized} с новосозданным взаимным исключением:
+\begin{pylst}{}{}
+import time
+import threading
+import sys
+lock = threading.Lock()
+
+@synchronized(lock)
+def msg(what, then):
+    print what,
+    sys.stdout.flush()
+    time.sleep(0.5)
+    print then,
+    sys.stdout.flush()
+\end{pylst}
+
+Теперь запустим несколько потоков, исполняющих эту функцию с разными значениями аргументов:
+\begin{pylst}{}{}
+import thread
+
+def start_threads():
+    thread.start_new_thread(msg, ('A', 'B'))
+    thread.start_new_thread(msg, ('C', 'D'))
+    thread.start_new_thread(msg, ('E', 'F'))
+
+>>> start_threads()
+E F A B C D
+>>> start_threads()
+C D A B E F
+\end{pylst}
+
+Как видно, порядок букв не нарушен: за \lstinline{A} следует \lstinline{B} и т. д.
+
+\subsubsection{Декоратор, муштрующий декораторы}
+Есть проблема с декорированной функцией: например, её свойство \lstinline{__name__} больше не равно ее действительному имени после декорирования. Следующий декоратор, призванный декорировать другие декораторы, этот досадный недостаток устраняет.
+\begin{pylst}{}{}
+def well_behaved(decorator):
+    def new(f):
+        g = decorator(f)
+        g.__name__ = f.__name__
+        g.__doc__ = f.__doc__
+        g.__dict__.update(f.__dict__)
+        return g
+    new.__name__ = decorator.__name__
+    new.__doc__ = decorator.__doc__
+    new.__dict__.update(decorator.__dict__)
+    return new
+\end{pylst}
+
+В качестве примера отдекорируем простейшую функцию с помощью \lstinline{debug}:
+\begin{pylst}{}{}
+@debug
+def dummy():
+    "Dummy's docstring"
+    pass
+
+>>> dummy.__name__
+'wrapped'
+>>> dummy.__doc__
+\end{pylst}
+
+Как видно, имя совсем не \lstinline{dummy} и строка документации исчезла. После применения \lstinline{well_behaved} к \lstinline{debug} получим:
+\begin{pylst}{}{}
+debug = well_behaved(debug)
+
+@debug
+def dummy():
+    "Dummy's docstring"
+    pass
+
+>>> dummy.__name__
+'dummy'
+>>> dummy.__doc__
+"Dummy's docstring"
+\end{pylst}
+
+Вуаля! проблема устранена!
 
 \section{Объектно-ориентированное программирование}
 \label{sec:py-oop}
@@ -2013,111 +2168,6 @@ trampoline.run()
 \begin{pylst}{}{}
 >>> sum(i*i for i in range(10))
 285
-\end{pylst}
-
-\section{Декораторы}
-\label{sec:py-decorators}
-Декоратор --- объект, который можно вызвать с одним аргументом. Он волен делать с переданным аргументом всё, что угодно, лишь бы программа оставалась корректной.
-\begin{pylst}{}{}
-def debug(func):
-    def wrapped(*args, **kwargs):
-        print "%s called with: %s, %s" % (func.__name__, args, kwargs)
-        ret = func(*args, **kwargs)
-        print "%s returned: %s" % (func.__name__, ret)
-        return ret
-    return wrapped
-
-@debug
-def inc(i):
-    return i + 1
-\end{pylst}
-
-@-синтаксис введен всего лишь для удобства. Вышеопределенное декорирование эквивалентно следующему:
-\begin{pylst}{}{}
-def inc(i):
-    return i + 1
-
-inc = debug(inc)
-\end{pylst}
-
-Пример вызова декорированной функции \lstinline{inc}:
-\begin{pylst}{}{}
->>> inc(1)
-inc called with: (1,), {}
-inc returned: 2
-\end{pylst}
-
-\subsection{Примеры декораторов}
-\subsubsection{Псевдокаррирование}
-Каррирование или карринг (англ. currying) в информатике --- преобразование функции от пары аргументов в функцию, берущую свои аргументы по одному.
-\begin{pylst}{}{}
-class curried(object):
-    def __init__(self, func, *a):
-        self.func = func
-        self.args = a
-
-    def __call__(self, *a):
-        args = self.args + a
-        if len(args) < self.func.__code__.co_argcount:
-            return curried(self.func, *args)
-        else:
-            return self.func(*args)
-
-@curried
-def add(a, b):
-    return a + b
-
-add1 = add(1)
-print add1(2)
-\end{pylst}
-
-\subsubsection{Синхронизация}
-Декорированная функция пытается захватить взаимное исключение перед тем, как исполняться.
-
-\begin{pylst}{}{}
-def synchronized(lock):
-    def wrap(f):
-        def sync(*args, **kwargs):
-            lock.acquire()
-            try:
-                return f(*args, **kwargs)
-            finally:
-                lock.release()
-        return sync
-    return wrap
-
-# Example usage:
-
-from threading import Lock
-lock = Lock()
-
-@synchronized(lock)
-def critical_one(*args):
-    pass
-
-@synchronized(lock)
-def critical_two(*args):
-    pass
-\end{pylst}
-
-\subsubsection{Декоратор, муштрующий декораторы}
-Есть проблема с декорированной функции, например, ее свойство \lstinline{__name__} больше не равно ее действительному имени после декорирования. Следующий декоратор, призванный декорировать другие декораторы, этот досадный недостаток устраняет.
-\begin{pylst}{}{}
-def well_behaved(decorator):
-    def new_decorator(f):
-        g = decorator(f)
-        g.__name__ = f.__name__
-        g.__doc__ = f.__doc__
-        g.__dict__.update(f.__dict__)
-        return g
-    new_decorator.__name__ = decorator.__name__
-    new_decorator.__doc__ = decorator.__doc__
-    new_decorator.__dict__.update(decorator.__dict__)
-    return new_decorator
-
-# Sample Use:
-
-synchronized = well_behaved(synchronized)
 \end{pylst}
 
 \section{Метаклассы}
