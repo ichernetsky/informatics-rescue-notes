@@ -2064,7 +2064,11 @@ class Game(object):
 \label{sec:py-iterators}
 
 \subsubsection{Итераторы}
-Итератор --- объект, позволяющий перебирать все элементы коллекции. Для реализации итерирования коллекции необходимо переопределить метод \lstinline{__iter__()}, который возвращает объект с реализованными методами \lstinline{__iter__()} и \lstinline{next()}. Метод \lstinline{__iter__()} итератора должен возвращать сам же итератор, чтобы как объекты, так и итераторы можно было использовать, например, с оператором \lstinline{for}. Метод \lstinline{next()} должен возвращаеть следующий элемент, если же такового нет, то он должен порождать исключение \lstinline{StopIteration}.
+\emph{Итератор} — объект, представляющий собой поток данных. Каждый вызов метода \lstinline{__next__()} этого объекта возвращает следующую порцию данных. Когда же данных больше нет, он должен порождать исключение \lstinline{StopIteration}.
+
+Для реализации итерирования необходимо переопределить метод \lstinline{__iter__()}, который возвращает объект с реализованными методами \lstinline{__iter__()} и \lstinline{next()}. Метод \lstinline{__iter__()} итератора должен возвращать сам же итератор, чтобы как объекты, так и итераторы можно было использовать, например, с оператором \lstinline{for}.
+
+Ниже представлена реализация счётчика-итератора, который возвращает все целые числа от нуля до \lstinline{limit}:
 \begin{pylst}{}{}
 class counter(object):
     def __init__(self, limit):
@@ -2086,7 +2090,76 @@ class counter(object):
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 \end{pylst}
 
-Для удобного создания итераторов и работы с ними в Python есть библиотека \texttt{itertools}.
+Для удобного создания итераторов и работы с ними в \emph{Python} есть модуль \lstinline{itertools}. Вот некоторые из частоиспользуемых функцией этого модуля:
+
+\lstinline{count(start=0, step=1)}. Бесконечная последовательность чисел, начиная с \lstinline{start}, с шагом \lstinline{step}.
+\begin{pylst}{}{}
+>>> import itertools
+>>> i = itertools.count(1, 1.5)
+>>> i.next()
+1
+>>> i.next()
+2.5
+\end{pylst}
+
+\lstinline{cycle(iterable)}. Бесконечная последовательность, состоящая из повторяемых по кругу элементов итератора \lstinline{iterable}.
+\begin{pylst}{}{}
+>>> i = itertools.cycle('ABCD')
+>>> for j, k in enumerate(i):
+...     print k,
+...     if j > 7:
+...         break
+A B C D A B C D A
+\end{pylst}
+
+\lstinline{repeat(object[, times])}. Возвращает объект либо бесконечное число раз, либо \lstinline{times} раз.
+\begin{pylst}{}{}
+>>> i = itertools.repeat(1, 5)
+>>> list(i)
+[1, 1, 1, 1, 1]
+\end{pylst}
+
+\lstinline{chain(*iterables)}. Возвращает последовательно элементы всех итераторов \lstinline{iterables}.
+\begin{pylst}{}{}
+>>> i = itertools.chain(xrange(3), xrange(3, 6), xrange(6, 9))
+>>> list(i)
+[0, 1, 2, 3, 4, 5, 6, 7, 8]
+\end{pylst}
+
+\lstinline{dropwhile(predicate, iterable)}. Отбрасывает элементы до тех пор, пока функция-предикат \lstinline{predicate} возвращает истину. После чего возвращает все оставшиеся элементы \lstinline{iterable}.
+\begin{pylst}{}{}
+>>> i = itertools.dropwhile(lambda x: x < 5, xrange(10))
+>>> list(i)
+[5, 6, 7, 8, 9]
+\end{pylst}
+
+\lstinline{takewhile(predicate, iterable)}. Возвращает элементы из \lstinline{iterable} до тех пор, пока функция-предикат \lstinline{predicate}, применённая к очередному элементу, возвращает истину.
+\begin{pylst}{}{}
+>>> i = itertools.takewhile(lambda x: x < 5, xrange(10))
+>>> list(i)
+[0, 1, 2, 3, 4]
+\end{pylst}
+
+\lstinline{ifilter(function or None, sequence)}. Аналог функции \lstinline{filter} с тем лишь отличием, что возвращает итератор.
+\begin{pylst}{}{}
+>>> i = itertools.ifilter(None, [1, 0, 2, 0, 3])
+>>> list(i)
+[1, 2, 3]
+\end{pylst}
+
+\lstinline{imap(function, *iterables)}. Аналог функции \lstinline{map}. Отличия: возвращает итератор и останавливается, как только один из итераторов \lstinline{iterables} заканчивается.
+\begin{pylst}{}{}
+>>> i = itertools.imap(lambda x, y: x + y, [1, 2, 3, 4], [2, 3, 4])
+>>> list(i)
+[3, 5, 7]
+\end{pylst}
+
+\lstinline{izip(*iterables)}. Возвращает итератор кортежей, в которых $i$-ым элементом является следующий элемент из $i$-ого итератора \lstinline{iterables}. Проделывает это, пока все итераторы возвращают объекты.
+\begin{pylst}{}{}
+>>> i = itertools.izip(xrange(5), xrange(1, 5))
+>>> list(i)
+[(0, 1), (1, 2), (2, 3), (3, 4)]
+\end{pylst}
 
 \subsubsection{Генераторы}
 Генераторы позволяют удобно реализовывать протокол итератора. Генератор есть функция, в которой используется оператор \lstinline{yield}, то есть для определения генератора достаточно просто записать оператор \lstinline{yield} в теле функции, это не имеет никакого отношения к времени исполнения.
