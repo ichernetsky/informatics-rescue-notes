@@ -1057,6 +1057,8 @@ suite-1: 1
 Оператор \lstinline{continue} передает управление на начало цикла или, если больше нет очередного объекта, на ветку \lstinline{else}.
 
 \subsubsection{Оператор try}
+\label{sec:py-try-stmt}
+
 Общая форма оператора \lstinline{try} выглядит следующим образом:
 \begin{pylst}{}{}
 try: $suite_1$
@@ -2059,6 +2061,48 @@ class Game(object):
   \item \lstinline{class.__instancecheck__(self, instance)}. Возвращает \lstinline{True}, если \lstinline{instance} должен рассматриваться как экземпляр класса.
   \item \lstinline{class.__subclasscheck__(self, subclass)}. Возвращает \lstinline{True}, если \lstinline{subclass} должен рассматриваться как потомок класса.
 \end{itemize}
+
+\section{Исключения}
+\label{sec:py-exceptions}
+
+Порождаются исключения оператором \lstinline{raise}, которому передаётся объект-исключение либо же класс ислючения.
+\begin{pylst}{}{}
+>>> raise NameError
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+NameError
+>>> raise ValueError("Wrong value")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ValueError: Wrong value
+\end{pylst}
+
+Стандартные исключения, определённые в \emph{Python}, перечислены в документации по адресу: \url{http://docs.python.org/library/exceptions.html}.
+
+\subsubsection{Исключения, определённые пользователем}
+Для определения нового типа исключения, следует определить новый класс, который является — явно или неявно — потомком класса \lstinline{Exception}.
+\begin{pylst}{}{}
+class MyError(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
+>>> try:
+...     raise MyError(2 * 2)
+... except MyError as e:
+...     print 'My exception occurred, value:', e.value
+...
+My exception occurred, value: 4
+
+>>> raise MyError('oops!')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+__main__.MyError: 'oops!'
+\end{pylst}
+
+\subsubsection{Обработка исключений}
+Обработка исключений рассмотрена в секции~«\nameref{sec:py-try-stmt}» на стр.~\pageref{sec:py-try-stmt}.
 
 \section{Итераторы и генераторы}
 \label{sec:py-iterators}
