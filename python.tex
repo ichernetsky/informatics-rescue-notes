@@ -2286,7 +2286,23 @@ trampoline.run()
 \end{pylst}
 
 \section{Метаклассы}
-В Python классы --- такие же объекты, как и всё остальное. Их можно передавать в качестве аргументов функциям или рассматривать под микроскопом. Так же как класс определяет поведение объектов, так и метакласс определяет поведение своих классов. Самый распростаненный метакласс в Python --- \lstinline{type}.
+В \emph{Python} классы — такие же объекты, как и всё остальное. Их можно передавать в качестве аргументов функциям или рассматривать под микроскопом.
+\begin{pylst}{}{}
+>>> class klass(object):
+...     pass
+
+>>> c = klass()
+>>> c
+<__main__.klass object at 0xc14a90>
+>>> klass
+<class '__main__.klass'>
+>>> id(klass)
+12861152
+\end{pylst}
+
+Функция \lstinline{id} возвращает адрес объекта в памяти, и, как видно, класс является тоже объектом, размещённым в памяти во  время исполнения.
+
+Так же как класс определяет поведение объектов, так и метакласс определяет поведение своих классов. Самый распростаненный метакласс в Python — \lstinline{type}.
 
 \begin{pylst}{}{}
 >>> object.__class__
@@ -2295,13 +2311,25 @@ trampoline.run()
 <type 'type'>
 \end{pylst}
 
-Часто метаклассы используются как фабрики. Когда Python создает новый класс (при выполнении оператора \lstinline{class}), он вызывает метакласс. Метакласс в свою очередь может поместить класс в какой-нибудь регистр или же вернуть \emph{совсем} другой класс. Для подавляющего большинства --- если не всех --- встроенных типов метаклассом является метакласс \lstinline{type}.
+Метаклассом следующих базовых типов данных является \lstinline{type}:
+\begin{pylst}{}{}
+>>> int.__class__
+<type 'type'>
+>>> str.__class__
+<type 'type'>
+>>> tuple.__class__
+<type 'type'>
+>>> list.__class__
+<type 'type'>
+\end{pylst}
+
+Когда \emph{Python} создаёт новый класс (при выполнении оператора \lstinline{class}), он вызывает метакласс. Метакласс в свою очередь может поместить класс в какой-нибудь регистр или же вернуть \emph{совсем} другой класс. Для подавляющего большинства — если не всех — встроенных типов метаклассом является метакласс \lstinline{type}. С помощью этого метакласса можно создать класс, аналогично оператору \lstinline{class}.
 
 \begin{pylst}{}{}
 # prototype
 type(name, bases, dict)
 \end{pylst}
-где \lstinline{name} --- имя нового класса, \lstinline{bases} --- последовательность базовый классов (может быть пустой), а \lstinline{dict} --- словарь, ключи которого являются именами аттрибутов создаваемого класса, а значения --- значениями этих аттрибутов.
+где \lstinline{name} — имя нового класса, \lstinline{bases} — последовательность базовый классов (может быть пустой), а \lstinline{dict} — словарь, ключи которого являются именами аттрибутов создаваемого класса, а значения — значениями этих аттрибутов.
 
 Определение
 \begin{pylst}{}{}
@@ -2313,44 +2341,55 @@ class MyClass(BaseClass):
 MyClass = type("MyClass", (BaseClass,), { 'attribute' : 42 })
 \end{pylst}
 
-Метакласс для класса указывается с помощью поля \lstinline{__metaclass__}. В метаклассе можно (пере)определять любые методы, как и в любом классе, с тем отличием, что методам класса передается экземпляр первым аргументом (отсюда и общеупотребимое \lstinline{self}), а методам метакласса --- класс. Поэтому первый аргумент часто именуется \lstinline{cls}.
+Метакласс для класса указывается с помощью поля \lstinline{__metaclass__}. В метаклассе можно (пере)определять любые методы, как и в любом классе, с тем отличием, что методам класса передается экземпляр первым аргументом (отсюда и общеупотребимое \lstinline{self}), а методам метакласса — класс. Поэтому первый аргумент часто именуется \lstinline{cls}.
 
+Напишем, метакласс, который будет демонстрировать время вызова некоторых методов.
 \begin{pylst}{}{}
-class UselessType(type):
-    def __new__(cls, name, bases, dct):
-        print "Allocating memory for class", name
-        return type.__new__(cls, name, bases, dct)
+>>> class UselessType(type):
+...     def __new__(metacls, name, bases, dct):
+...         print "Allocating memory for class", name
+...         return super(UselessType, metacls).__new__(metacls, name, bases, dct)
+...
+...     def __init__(cls, name, bases, dct):
+...         print "Initing (configuring) class", name
+...         super(UselessType, cls).__init__(name, bases, dct)
+...
+...     def __call__(cls, *args, **kwargs):
+...         print "Calling %s" % cls.__name__
+...         return super(UselessType, cls).__call__(*args, **kwargs)
+...
+...     def whoami(cls):
+...         print cls.__name__
 
-    def __init__(cls, name, bases, dct):
-        print "Init'ing (configuring) class", name
-        super(UselessType, cls).__init__(name, bases, dct)
+>>> class UselessClass(object):
+...     __metaclass__ = UselessType
 
-    def __call__(cls, *args, **kwargs):
-        print "Calling %s" % cls.__name__
-        return super(UselessType, cls).__call__(*args, **kwargs)
+Allocating memory for class UselessClass
+Initing (configuring) class UselessClass
 
-    def whoami(cls):
-        print cls.__name__
-
-class UselessClass(object):
-    __metaclass__ = UselessType
+>>> u = UselessClass()
+Calling UselessClass
 
 >>> UselessClass.whoami()
 UselessClass
->>> UselessClass()
-Calling <class '__main__.UselessClass'>
+>>> u.whoami()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'UselessClass' object has no attribute 'whoami'
 \end{pylst}
+
+Как видим, методы \lstinline{__new__} и \lstinline{__init__} метакласса вызываются при создании класса. Метод же \lstinline{__call__} метакласса вызывается при создании экземпляра класса.
 
 Когда выполняется оператор \lstinline{class}, Python вначале выполняет внутреннее содержимое как обычный блок кода. В результате получается пространство имен, представленное словарем. Затем Python ищет метакласс для создаваемого класса в следующей последовательности:
 \begin{enumerate}
   \item Если \lstinline{dict['__metaclass__']} существуют, то используется он.
-  \item В ином случае, если у класса есть базовые классы, их метакласс используется (сначала проверяется аттрибут \lstinline{__class__}, и если такого нет, то исползуется тип базового класса).
+  \item В ином случае, если у класса есть базовые классы, их метакласс используется (сначала проверяется аттрибут \lstinline{__class__}, и если такого нет, то используется тип базового класса).
   \item В ином случае, если есть глобальная переменная \lstinline{__metaclass__}, то используется она.
 \end{enumerate}
 
 После чего метакласс вызывается с именем вновь создаваемого класса, его базовыми классами и словарем аттрибутов как аргументами.
 
-Полю \lstinline{__metaclass__} можно присваивать не только метаклассы, но и любой вызываемый (callable) объект, который принимает три аргумента.
+Полю \lstinline{__metaclass__} можно присваивать не только метаклассы, но и \emph{любой вызываемый} (\emph{callable}) объект, который принимает три аргумента.
 \begin{pylst}{}{}
 def meta(name, bases, dct):
     # setting useless attr
@@ -2364,7 +2403,7 @@ class Bar(object):
 'bar'
 \end{pylst}
 
-Следом идет реализация паттерна Singleton с помощью метакласса:
+Следом идет реализация паттерна \emph{Singleton} с помощью метакласса:
 \begin{pylst}{}{}
 class SingletonMetaclass(type):
     instance = None
@@ -2382,7 +2421,44 @@ class Foo(object):
 True
 \end{pylst}
 
-Как говорится в руководстве по Python, области применения метаклассов безграничны, что, конечно же, является бесстыдным враньём. Вот несколько из общеизвестных применений: logging, проверка интерфейсов, автоматическое делегирование, автоматическое создание свойств класса, прокси, ORM и автоматическая синхронизация/захват ресурса.
+Как говорится в руководстве по \emph{Python}, области применения метаклассов безграничны, что, конечно же, является бесстыдным враньём. Вот несколько из общеизвестных применений: ведение журнала событий, проверка интерфейсов, автоматическое делегирование, автоматическое создание свойств класса, прокси, ORM и автоматическая синхронизация/захват ресурса.
+
+Для примера напишем метакласс, который инициализирует некоторые аттрибуты вновь создаваемого класса, беря значения из файла, указанного в переменной класса \lstinline{dump_file}, который хранится в формате \emph{JSON}.
+\begin{pylst}{}{}
+import json
+
+class InitFromDumpMeta(type):
+    def __new__(metacls, name, bases, dct):
+        if 'dump_file' in dct:
+            try:
+                dump_file = file(dct['dump_file'])
+                dump = json.load(dump_file)
+            except (IOError, ValueError):
+                pass
+            else:
+                dct.update(dump)
+
+        return super(InitFromDumpMeta, metacls).__new__(metacls, name, bases, dct)
+\end{pylst}
+
+Имея файл \lstinline{/tmp/dump.json} со следующим содержимым:
+\begin{plainlst}{}{}
+{ "one" : 1, "two" : 2 }
+\end{plainlst}
+и определив следующий класс:
+\begin{pylst}{}{}
+class InitFromDumpClass(object):
+    __metaclass__ = InitFromDumpMeta
+
+    dump_file = '/tmp/dump.json'
+\end{pylst}
+получим:
+\begin{pylst}{}{}
+>>> InitFromDumpClass.one
+1
+>>> InitFromDumpClass.two
+2
+\end{pylst}
 
 \section{Интроспекция}
 \label{sec:py-introspection}
