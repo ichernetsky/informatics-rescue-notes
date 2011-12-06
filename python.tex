@@ -1869,78 +1869,187 @@ AssertionError: arg 2.0 does not match <type 'int'>
 
 \section{Объектно-ориентированное программирование}
 \label{sec:py-oop}
-В Python всё --- объекты, и даже типы. Типы --- экземпляры \lstinline{type}. Python поддерживает множественное наследование и перегрузку операторов. Например, оператор \lstinline{+} можно перегрузить для объекта путём определения метода \lstinline{__add__}.
 
-Простое определение класса:
+В \emph{Python} всё — объекты, и даже типы. Типы — экземпляры \lstinline{type}. \emph{Python} поддерживает множественное наследование и перегрузку операторов. Например, оператор \lstinline{+} можно перегрузить для объекта путём определения методов \lstinline{__add__} и \lstinline{__radd__}.
+
+Ниже представлено простейшее определение класса:
 \begin{pylst}{}{}
-class MyClass(object):
-    i = 12345
-    def __init__(self):
-        self.i = 54321
-    def f(self):
-        return self.i
+class klass(object):
+    pass
 \end{pylst}
 
-Видно, что \lstinline{MyClass} отнаследован от класса \lstinline{object}. Если надо, чтобы объект наследовался от многих классов, то их надо записывать через запятую. В месте указания базовых классов может быть любое выражение, лишь бы результатом его вычисления был тип.
+Видно, что \lstinline{klass} отнаследован от класса \lstinline{object}. Если надо, чтобы объект наследовался от многих классов, то их следует записать через запятую. В месте указания базовых классов может быть любое выражение, лишь бы результатом его вычисления был тип. Следующее определение класса аналогично предыдущему:
 \begin{pylst}{}{}
 def get_object():
     return object
 
-class ExpChild(get_object()):
+class klass(get_object()):
     pass
 \end{pylst}
 
-Если в классе определена переменная, а в методах выполняется \lstinline{self.var = value}, то тем самым определяется переменная экземпляра, которая затеняет переменную класса с тем же именем.
+В \emph{Python} поля могут принадлежать как классу целиком, так и конкретным экземлярам класса. Проиллюстрируем для предельной ясности:
 \begin{pylst}{}{}
->>> c = MyClass()
->>> c.i
-54321
->>> MyClass.i
-12345
+class storage(object):
+    i = 1
+
+    def __init__(self):
+        self.i = 3
+
+>>> s = storage()
+>>> storage.i += 1
+>>> s.i += 1
+>>> storage.i
+2
+>>> storage.i
+4
 \end{pylst}
 
-Инициализация --- и только! --- происходит в методе \lstinline{__init__()}. Если надо контролировать процесс создания объекта, то следует переопределять \lstinline{__new__(cls[, ...])}, как один из вариантов.
+Методу \lstinline{__init__(self)} передаётся для инициализации созданный экземляр класса \lstinline{storage}. Выражение \lstinline{self.i = 3} поэтому создаёт аттрибут вновь созданного объекта, которому присвоено значение \lstinline{3}.
+
+Возможно использование не-очень-приватных полей:
 \begin{pylst}{}{}
-class Complex(object):
+class klass(object):
+    def __init__(self):
+        self.__private = 1
+
+>>> c = klass()
+>>> c.__dict__
+{'_klass__private': 1}
+\end{pylst}
+
+Как видно, происходит \emph{name mangling}: любое имя вида \lstinline{__*} внутри определения класса \lstinline{klass} преобразуется в \lstinline{_klass__*}.
+
+Определение метода — аналогично определению функцию. Отличие в том, что метод определяется в классе и ему при вызове передаётся первым параметром экземпляр класса.
+\begin{pylst}{}{}
+class klass(object):
+    def m(self):
+        print self
+
+>>> c = klass()
+>>> c.m()
+<__main__.klass object at 0x1188f10>
+\end{pylst}
+
+Так как метод всего лишь функция, то метод \lstinline{m} можно было бы определить следующим образом:
+\begin{pylst}{}{}
+class klass(object):
+    pass
+
+def m(self):
+    print self
+
+>>> c = klass()
+>>> klass.m = m
+>>> c.m()
+<__main__.klass object at 0x1225990>
+\end{pylst}
+
+В \emph{Python} существуют ещё два типа методов в дополнение к обычным: \emph{статические} (\emph{static}) методы и \emph{методы класса} (\emph{class methods}). Метод класса определяется вот так вот:
+\begin{pylst}{}{}
+class klass(object):
+    @classmethod
+    def clsmethod(cls):
+        print 'class:', cls
+
+>>> c = klass()
+>>> klass.clsmethod()
+class: <class '__main__.klass'>
+>>> c.clsmethod()
+class: <class '__main__.klass'>
+\end{pylst}
+
+Как видно, методу класса первым параметром при вызове передаётся сам класс, а не экземляр класса. Статический метод определяется следующим образом:
+\begin{pylst}{}{}
+class klass(object):
+    @staticmethod
+    def staticmethod():
+        print 'static'
+
+>>> c = klass()
+>>> klass.staticmethod()
+static
+>>> c.staticmethod()
+static
+\end{pylst}
+
+Его отличие от других типов метода в том, что ему не передаётся неявно никаких дополнительных параметров при вызове.
+
+Инициализация — и только! — происходит в методе \lstinline{__init__()}. Если надо контролировать процесс создания объекта, то следует переопределять \lstinline{__new__(cls[, ...])}, как один из вариантов.
+\begin{pylst}{}{}
+class complex(object):
     def __init__(self, real, imag):
         self.real = real
         self.imag = imag
 
->>> c = Complex(5.1, 3.0)
+>>> c = complex(5.1, 3.0)
 >>> c.real, c.imag
 (5.1, 3.0)
 \end{pylst}
 
-Также можно определять свойства:
+\subsection{Свойства}
+
+В классах можно определять свойства с помощью \lstinline{property}, который имеет следующую сигнатуру:
 \begin{pylst}{}{}
-class C(object):
-    x = 0
+property(fget=None, fset=None, fdel=None, doc=None)
+\end{pylst}
+где \lstinline{fget} — метод для получения значения свойства; \lstinline{fset} — для установки; \lstinline{fdel} — для удаления свойства при использовании оператора \lstinline{del}; \lstinline{doc} — собственно, строка документации для свойства.
+
+\begin{pylst}{}{}
+class klass(object):
+    def __init__(self):
+        self._x = 0
+
     def getx(self):
         return self._x
-    def setx(self, value):
-        self._x = value
+
+    def setx(self, val):
+        self._x = val
+
     def delx(self):
         del self._x
+
     x = property(getx, setx, delx, "I'm the 'x' property.")
 
-# another way
+>>> c = klass()
+>>> c.x = 3
+>>> c.x
+3
+>>> klass.x.__doc__
+"I'm the 'x' property."
+\end{pylst}
 
-class C(object):
-    x = 0
+Также можно определить свойство используя синтаксис декораторов:
+\begin{pylst}{}{}
+class klass(object):
+    def __init__(self):
+        self._x = 0
+
     @property
     def x(self):
+        "I'm the 'x' property."
         return self._x
+
     @x.setter
-    def x(self, value):
-        self._x = value
+    def x(self, val):
+        self._x = val
+
     @x.deleter
     def x(self):
         del self._x
 \end{pylst}
 
-\lstinline{getx()} будет вызываться при выражении \lstinline{x = instance.x}, \lstinline{setx(value)} будет вызываться при выражении \lstinline{instance.x = x}, а \lstinline{delx()} --- при \lstinline{del instance.x}.
+Если параметр \lstinline{doc} не передан, то используется строка документации метода, используемого для доступа. Можно, например, определить свойство только для чтения, если передать \lstinline{property} только метод для чтения.
 
-Для вызовы методов базовых классов из какого-либо метода следует использовать встроенную функцию \lstinline{super(type[, object-or-type])}. Аттрибут \lstinline{__mro__} типа \lstinline{type} является списком типов, который определяет по каким типам и в каком порядке будет происходить поиск нужного метода при использовании функции \lstinline{super()}. \lstinline{__mro__} может изменяться, когда изменяется иерархия наследования.
+\subsection{Иерархии классов и MRO}
+
+Для вызовы методов базовых классов из какого-либо метода следует использовать встроенную функцию \lstinline{super(type[, object-or-type])}. Типичное использование функции \lstinline{super}:
+\begin{pylst}{}{}
+class C(B):
+    def method(self, arg):
+        super(C, self).method(arg)
+\end{pylst}
+
+Аттрибут \lstinline{__mro__} типа \lstinline{type} является списком типов, который определяет по каким типам и в каком порядке будет происходить поиск нужного метода при использовании функции \lstinline{super()}. \lstinline{__mro__} может изменяться, когда изменяется иерархия наследования.
 \begin{pylst}{}{}
 class A(object):
     def f(self):
@@ -1977,40 +2086,11 @@ A
 
 То есть \lstinline{__mro__} содержит линеаризованный граф с уникальными элементами, чтобы ни один метод какого-либо базового класса не вызывался несколько раз, если переопределенный метод достижим по нескольким путям.
 
-Проверять отношения наследования функциями \lstinline{isinstance(object, class-or-type-or-tuple)} и \lstinline{issubclass(C, B)}.
+Проверять отношения наследования можно функциями \lstinline{isinstance(object, class-or-type-or-tuple)} и \lstinline{issubclass(C, B)}.
 \begin{pylst}{}{}
 >>> issubclass(D, D), issubclass(D, A), isinstance(D(), A)
 (True, True, True)
 \end{pylst}
-
-Статические методы и методы класса определяются следующим образом:
-\begin{pylst}{}{}
-class MyClass(object):
-    @classmethod
-    def clsmethod(cls):
-        print cls, 'class'
-
-    @staticmethod
-    def statmethod()
-        print 'static'
-\end{pylst}
-
-В Python возможно использовать не-очень-приватные поля:
-\begin{pylst}{}{}
-class C(object):
-    def __init__(self):
-        self.__private = 1
-
->>> c = C()
->>> dir(c)
-['_C__private', '__class__', '__delattr__', '__dict__', '__doc__',
- '__format__', '__getattribute__', '__hash__', '__init__',
- '__module__', '__new__', '__reduce__', '__reduce_ex__',
- '__repr__', '__setattr__', '__sizeof__', '__str__',
- '__subclasshook__', '__weakref__']
-\end{pylst}
-
-То есть любое имя вида \lstinline{__*} внутри определения класса \lstinline{Class} преобразуется в \lstinline{_Class__*}.
 
 \subsection{Специальные методы}
 
