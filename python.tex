@@ -2386,26 +2386,33 @@ True
 
 \section{Интроспекция}
 \label{sec:py-introspection}
-В Python можно получить подробную информацию о внутренней структуре любого объекта и среды исполнения. Необходимые для интроспекции данные хранятся в специальных атрибутах. Так, например, получить все пользовательские атрибуты большинства объектов можно из специального атрибута --- словаря (или объекта, предоставляющего dict интерфейс) \lstinline{__dict__}.
-\begin{pylst}{}{}
-class Class(object): pass
 
->>> c = Class()
+В \emph{Python} можно получить подробную информацию о внутренней структуре любого объекта и среды исполнения. Необходимые для интроспекции данные хранятся в специальных атрибутах. Так, например, получить все пользовательские атрибуты большинства объектов можно из специального атрибута — словаря (или объекта, предоставляющего \lstinline{dict} интерфейс) \lstinline{__dict__}.
+\begin{pylst}{}{}
+class klass(object):
+    pass
+
+>>> c = klass()
 >>> c.attr = 'some'
 >>> print c.__dict__
 {'attr': 'some'}
->>> print Class.__dict__
-{'__dict__': <attribute '__dict__' of 'Class' objects>,
+>>> print klass.__dict__
+{'__dict__': <attribute '__dict__' of 'klass' objects>,
  '__module__': '__main__',
- '__weakref__': <attribute '__weakref__' of 'Class' objects>,
+ '__weakref__': <attribute '__weakref__' of 'klass' objects>,
  '__doc__': None}
+\end{pylst}
 
-class BaseA(object): pass
-class BaseB(object): pass
-class Child(BaseA, BaseB): pass
+Аналогично можно исследовать, например, иерархию наследования классов:
+\begin{pylst}{}{}
+class BaseA(object):
+    pass
 
-# let's get some information about object's hierachy
-# and method resolution order
+class BaseB(object):
+    pass
+
+class Child(BaseA, BaseB):
+    pass
 
 >>> c = Child()
 >>> c.__class__
@@ -2421,15 +2428,17 @@ class Child(BaseA, BaseB): pass
  <type 'object'>)
 \end{pylst}
 
-Для более удобного получения информации о внутреннем устройстве различных объектов был введён модель \lstinline{inspect}.
+Для более удобного получения информации о внутреннем устройстве различных объектов был введён модуль \lstinline{inspect}.
 \begin{pylst}{}{}
 import inspect
 
 def f(a, b, c=3):
-    pass
+    return a + b + c
 
 >>> inspect.getargspec(f)
 ArgSpec(args=['a', 'b', 'c'], varargs=None, keywords=None, defaults=(3,))
+>>> f.func_code.co_code
+'|\x00\x00|\x01\x00\x17|\x02\x00\x17S'
 \end{pylst}
 
 \begin{thebibliography}{9}
