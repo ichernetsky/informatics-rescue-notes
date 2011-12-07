@@ -2102,40 +2102,6 @@ A
   \item \lstinline{object.__getattribute__(self, name)}. Вызывается всегда. Если порождает исключение \lstinline{AttributeError}, вызывается метод \lstinline{object.__getattr__(self, name)}.
 \end{itemize}
 
-\subsubsection{Реализация протокола дескриптора}
-\begin{itemize}
-  \item \lstinline{object.__get__(self, instance, owner)}
-  \item \lstinline{object.__set__(self, instance, value)}
-  \item \lstinline{object.__delete__(self, instance)}
-\end{itemize}
-
-Дескриптор --- это объект, который реализует хотя бы один из вышеперечисленных методов. Если у объекта \lstinline{obj} есть аттрибут \lstinline{d}, который в свою очередь есть дескриптор, то код \lstinline{obj.d} эквивалентен коду \lstinline{type(obj).__dict__['x'].__get__(obj, type(obj))}.
-
-\begin{pylst}{Пример дескриптора}{}
-import random
-
-class Die(object):
-    def __init__(self, sides=6):
-        self.sides = sides
-
-    def __get__(self, instance, owner):
-        return int(random.random() * self.sides) + 1
-
-class Game(object):
-    d6 = Die()
-    d10 = Die(sides=10)
-    d20 = Die(sides=20)
-
->>> Game.d6
-5
->>> Game.d10
-8
->>> Game.d20
-19
->>> Game.d20
-3
-\end{pylst}
-
 \subsubsection{Настройка проверок экземпляров и подклассов}
 \begin{itemize}
   \item \lstinline{class.__instancecheck__(self, instance)}. Возвращает \lstinline{True}, если \lstinline{instance} должен рассматриваться как экземпляр класса.
@@ -2407,6 +2373,165 @@ trampoline.run()
 \begin{pylst}{}{}
 >>> sum(i*i for i in range(10))
 285
+\end{pylst}
+
+\section{Дескрипторы}
+\label{sec:py-descriptors}
+
+\emph{Дескриптор} — это объект, который реализует хотя бы один из нижеперечисленных методов. Эти методы вызываются при доступе к аттрибуту класса \lstinline{owner}, когда значением аттрибута является объект-дескриптор.
+\begin{itemize}
+  \item \lstinline{d.__get__(self, instance, owner)}. Здесь \lstinline{owner} — класс, которому принадлежит дескриптор \lstinline{d}. \lstinline{instance} равен либо экземляру класса, если доступ производится через экземпляр, либо \lstinline{None}, если доступ — через класс \lstinline{owner}. Этот метод должен возвратить значение аттрибута либо породить исключение \lstinline{AttributeError}.
+  \item \lstinline{d.__set__(self, instance, value)}. Вызывается для установки нового значения \lstinline{value} для аттрибута экземпляра класса \lstinline{instance}.
+  \item \lstinline{d.__delete__(self, instance)}. Вызывается для удаления аттрибута, который принадлежит экземпляру \lstinline{instance}.
+\end{itemize}
+
+При поиске обычного аттрибута \lstinline{x} у объекта \lstinline{a} происходит следующее: сначала проверяется \lstinline{a.__dict__['x']}, затем \lstinline{type(a).__dict__['x']}, после чего повторяется тоже самое и с базовыми классами до тех пор, пока не будет найден аттрибут. Если аттрибута не оказалось, то — исключение \lstinline{AttributeError}.
+
+Если же аттрибут \lstinline{x} объекта \lstinline{a} — дескриптор, то выражение \lstinline{a.x} будет преобразовано в \lstinline{type(a).__dict__['x'].__get__(a, type(a))}, если \lstinline{a} — экземпляр, и в \lstinline{a.__dict__['x'].__get__(None, a)}, если \lstinline{a} является классом.
+
+Напишем простейший дескриптор для демонстрации вызовов методов:
+\begin{pylst}{}{}
+class RevealAccess(object):
+    def __init__(self, initval=None, name='var'):
+        self.val = initval
+        self.name = name
+
+    def __get__(self, obj, objtype):
+        print 'Retrieving', self.name
+        return self.val
+
+    def __set__(self, obj, val):
+        print 'Updating', self.name
+        self.val = val
+
+>>> class MyClass(object):
+    x = RevealAccess(10, 'x')
+    y = 5
+
+>>> m = MyClass()
+>>> m.x
+Retrieving x
+10
+>>> m.x = 20
+Updating var "x"
+>>> m.x
+Retrieving var "x"
+20
+>>> m.y
+5
+\end{pylst}
+
+Видно по печати, что при доступе к аттрибуту \lstinline{x} вызываются соответствующие методы дескриптора.
+
+С помощью дескрипторов в \emph{Python} реализованы свойства. Следом — подобная реализация:
+\begin{pylst}{}{}
+class Property(object):
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+        self.fget = fget
+        self.fset = fset
+        self.fdel = fdel
+
+        if fget is not None:
+            self.__doc__ = fget.__doc__
+        else:
+            self.__doc__ = doc
+
+    def __get__(self, obj, klass=None):
+        if obj is None:
+            return self
+        if self.fget is None:
+            raise AttributeError, "unreadble attribute"
+        return self.fget(obj)
+
+    def __set__(self, obj, value):
+        if self.fset is None:
+            raise AttributeError, "unsetable attribute"
+        self.fset(obj, value)
+
+    def __delete__(self, obj):
+        if self.fdel is None:
+            raise AttributeError, "undeletable attribute"
+        self.fdel(obj)
+\end{pylst}
+
+\lstinline{staticmethod} и \lstinline{classmethod} также реализованы дескрипторами:
+\begin{pylst}{}{}
+class StaticMethod(object):
+    def __init__(self, fn):
+        self.fn = fn
+
+    def __get__(self, obj, klass=None):
+        return self.fn
+
+class ClassMethod(object):
+     def __init__(self, fn):
+          self.fn = fn
+
+     def __get__(self, obj, klass=None):
+          if klass is None:
+               klass = type(obj)
+          def m(*args):
+               return self.fn(klass, *args)
+          return m
+\end{pylst}
+
+Как пример напишем дескриптор для проверки типа значения:
+\begin{pylst}{}{}
+class WellTyped(object):
+    of_type = object
+
+    def __init__(self, default):
+        self._check(default)
+        self._default = default
+        self._value   = dict()
+
+    def __get__(self, obj, klass=None):
+        if obj is None:
+            return self
+        if obj in self._value:
+            return self._value[obj]
+        else:
+            return self._default
+
+    def __set__(self, obj, val):
+        self._check(val)
+        self._value[obj] = val
+
+    def _check(self, val):
+        if not isinstance(val, self.of_type):
+            raise ValueError
+
+class Int(WellTyped):
+    of_type = int
+
+class Str(WellTyped):
+    of_type = str
+
+class PositiveInt(Int):
+    def _check(self, val):
+        super(PositiveInt, self)._check(val)
+        if val < 0:
+            raise ValueError
+\end{pylst}
+
+Проверим, работает ли, как ожидается:
+\begin{pylst}{}{}
+>>> t = Test()
+>>> t.i = 1.0
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/tmp/py6835YLA", line 19, in __set__
+  File "/tmp/py6835YLA", line 24, in _check
+ValueError
+>>> t.i = 2
+>>> t.i
+2
+>>> t.pi = -1
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/tmp/py6835YLA", line 19, in __set__
+  File "/tmp/py6835YLA", line 36, in _check
+ValueError
 \end{pylst}
 
 \section{Метаклассы}
