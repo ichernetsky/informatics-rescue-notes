@@ -2156,10 +2156,9 @@ __main__.MyError: 'oops!'
 \subsubsection{Обработка исключений}
 Обработка исключений рассмотрена в секции~«\nameref{sec:py-try-stmt}» на стр.~\pageref{sec:py-try-stmt}.
 
-\section{Итераторы и генераторы}
+\section{Итераторы}
 \label{sec:py-iterators}
 
-\subsubsection{Итераторы}
 \emph{Итератор} — объект, представляющий собой поток данных. Каждый вызов метода \lstinline{__next__()} этого объекта возвращает следующую порцию данных. Когда же данных больше нет, он должен порождать исключение \lstinline{StopIteration}.
 
 Для реализации итерирования необходимо переопределить метод \lstinline{__iter__()}, который возвращает объект с реализованными методами \lstinline{__iter__()} и \lstinline{next()}. Метод \lstinline{__iter__()} итератора должен возвращать сам же итератор, чтобы как объекты, так и итераторы можно было использовать, например, с оператором \lstinline{for}.
@@ -2257,44 +2256,154 @@ A B C D A B C D A
 [(0, 1), (1, 2), (2, 3), (3, 4)]
 \end{pylst}
 
-\subsubsection{Генераторы}
-Генераторы позволяют удобно реализовывать протокол итератора. Генератор есть функция, в которой используется оператор \lstinline{yield}, то есть для определения генератора достаточно просто записать оператор \lstinline{yield} в теле функции, это не имеет никакого отношения к времени исполнения.
+\section{Генераторы}
+\label{sec:py-generators}
+Генераторы позволяют удобно реализовывать протокол итератора, но далеко не только. \emph{Генератор} есть функция, в которой используется \lstinline{yield}, то есть для определения генератора достаточно просто записать \lstinline{yield} в теле функции.
 
-При вызове генератора возвращается итератор (технически, объект-генератор). Когда вызывается какой-либо метод итератора, начинается выполнение до первого встреченного оператора \lstinline{yield}, выполнение приостанавливается, запоминается точка возврата, и, наконец, возвращается значение при операторе \lstinline{yield}. При следующем вызове итератора выполнение начинается с точки останова. Так продолжается до тех пор, пока генератор не завершится любым отличным от оператора \lstinline{yield} способом (достигнет конца тела функции, при помощи оператора \lstinline{return}, исключительная ситуация).
+Когда вызывается метод \lstinline{next()} генератора, начинается выполнение до первого встреченного оператора \lstinline{yield}, выполнение приостанавливается, запоминается точка возврата, и, наконец, возвращается значение при операторе \lstinline{yield}. При следующем вызове \lstinline{next()} выполнение начинается с точки останова. Так продолжается до тех пор, пока генератор не завершится любым отличным от оператора \lstinline{yield} способом (достигнет конца тела функции, при помощи оператора \lstinline{return}, исключительная ситуация).
+
+Для примера напишем генератор, который будет возвращать элементы последовательности по кругу:
+\begin{pylst}{}{}
+def cycle(seq):
+    i =  0
+    l = len(seq)
+    while True:
+        yield seq[i]
+        i = (i + 1) % l
+
+>>> g = cycle(['John', 'James', 'Hannibal'])
+<generator object cycle at 0xb54640>
+>>> g.next(), g.next(), g.next()
+('John', 'James', 'Hannibal')
+>>> g.next()
+'John'
+\end{pylst}
 
 В объекте-генераторе определены следующие методы:
 \begin{itemize}
-  \item \lstinline{next()}. Начинает выполнение функции-генераторы сначала или же вместе останова, если таковой присутствовал. Если выполнение начинается с точки останова, то текущий оператор \lstinline{yield} вычисляется в \lstinline{None}, и вычисление продолжается дальше. Если функция завершается не посредством \lstinline{yield}, то порождается исключение \lstinline{StopIteration}.
+  \item \lstinline{next()}. Начинает выполнение функции-генератора с начала или же в месте останова, если таковой присутствовал. Если выполнение начинается с точки останова, то текущий \lstinline{yield} вычисляется в \lstinline{None}, и вычисление продолжается дальше. Если функция завершается не посредством \lstinline{yield}, то порождается исключение \lstinline{StopIteration}.
 
-  \item \lstinline{send(value)}. Возобновляет выполнение и передает значение \lstinline{value} в точку останова. \lstinline{value} подставляется вместо текущего оператора \lstinline{yield}. Возвращает следующее значение, которое вернул оператор \lstinline{yield}, или порождает исключение \lstinline{StopIteration}, если функция-генератор завершилась другим способом. Если \lstinline{send(value)} вызывается для пуска генератора, то \lstinline{value} должно быть \lstinline{None}.
-  \item \lstinline{throw(type[, value[, traceback]])}. Порождает исключение типа \lstinline{type} там, где функция-генератор была остановлена, и возвращает следующее значение, которая вернет функция-генератор. Если функция просто завершается, то порождается исключение \lstinline{StopIteration}.
+  \item \lstinline{send(value)}. Возобновляет выполнение и передает значение \lstinline{value} в точку останова, то есть \lstinline{value} подставляется вместо текущего \lstinline{yield}. Возвращает следующее значение, которое вернул оператор \lstinline{yield}, или порождает исключение \lstinline{StopIteration}, если функция-генератор завершилась другим способом. Если \lstinline{send(value)} вызывается для пуска генератора, то \lstinline{value} должно быть \lstinline{None}.
+
+  \item \lstinline{throw(type[, value[, traceback]])}. Порождает исключение типа \lstinline{type} там, где функция-генератор была остановлена, то есть на месте \lstinline{yield} выполняется следующее:
+\begin{pylst}{}{}
+raise type, value, traceback
+\end{pylst}
+Возвращает следующее значение, которая вернет функция-генератор. Если функция просто завершается, то порождается исключение \lstinline{StopIteration}. Если функция не обрабатывает посланное исключение либо порождает какое-либо другое, то поиск обработчика происходит ожидаемым образом.
+
   \item \lstinline{close()}. Порождает исключение \lstinline{GeneratorExit} в месте останова. Если функция-генератор затем порождает \lstinline{StopIteration} (или завершаясь нормально, или если уже была завершена) или \lstinline{GeneratorExit} (просто не обрабатывая его), происходит возврат из \lstinline{close}. Если функция возвращает значение оператором \lstinline{yield}, то возникает исключение \lstinline{RuntimeError}.
 \end{itemize}
 
+Следом пример обхода бинарного дерева с помощью генераторов:
 \begin{pylst}{}{}
-def infinite(i):
-    while True:
-        yield i
+class Tree(object):
+    def __init__(self, value, left=None, right=None):
+        self.value = value
+        self.left  = left
+        self.right = right
 
->>> g = infinite(5)
->>> g.next()
-5
->>> g.next()
-5
+    @staticmethod
+    def from_list(list):
+        n = len(list)
+        if n == 0:
+            return None
+        i = n / 2
+        return Tree(list[i],
+                    Tree.from_list(list[:i]),
+                    Tree.from_list(list[i + 1:]))
+
+    @staticmethod
+    def inorder(tree):
+        if tree:
+            for x in Tree.inorder(tree.left):
+                yield x
+            yield tree.value
+            for x in Tree.inorder(tree.right):
+                yield x
+
+    def __iter__(self):
+        return Tree.inorder(self)
+
+>>> tree = Tree.from_list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+>>> for x in tree:
+...     print x,
+A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
 \end{pylst}
 
-С помощью генераторов можно реализовать, например, координатор сопрограмм (coroutines). Сопрограмма --- компонент программы, обобщающий понятие подпрограммы, который дополнительно поддерживает множество входных точек и остановку и продолжение выполнения.
-\begin{pylst}{Из PEP 342}{}
+Используя генераторы, легко реализовать аналог утилиты \lstinline{tail -f}.
+\begin{pylst}{}{}
+def follow(path):
+    f = file(path)
+    f.seek(0, 2)
+    while True:
+        line = f.readline()
+        if not line:
+            continue
+        yield line
+
+>>> for line in follow("/var/log/syslog"):
+...     print line,
+\end{pylst}
+
+Естественно, по этому принципу можно организовать канал. Например, реализуем что-то похожее на \lstinline{tail -f file | grep "error\|warning"}:
+\begin{pylst}{}{}
+def consumer(f):
+    def wrapper(*args, **kwargs):
+        g = f(*args, **kwargs)
+        g.next()
+        return g
+    return wrapper
+
+def follow(path, target):
+    f = file(path)
+    f.seek(0, 2)
+    while True:
+         line = f.readline()
+         if not line:
+             continue
+         target.send(line)
+
+@consumer
+def grep(string, target):
+    while True:
+        line = yield
+        if string in line:
+            target.send(line)
+
+@consumer
+def echo():
+    while True:
+        line = yield
+        print line,
+
+@consumer
+def broadcast(targets):
+    while True:
+        item = yield
+        for target in targets:
+            target.send(item)
+
+if __name__ == '__main__':
+    follow('/tmp/fol',
+           broadcast([grep('error', echo()),
+                      grep('warning', echo())]))
+\end{pylst}
+
+С помощью генераторов можно реализовать координатор \emph{сопрограмм} (\emph{coroutines}). \emph{Сопрограмма} — компонент программы, обобщающий понятие подпрограммы, который дополнительно поддерживает множество входных точек и остановку и продолжение выполнения. Ниже представлен исходный текст координатора и планировщика сопрограмм\footnote{Взято из \emph{PEP} 342.}:
+\begin{pylst}{}{}
 import collections
 import sys
 import types
 
 class Trampoline(object):
+    """Manage communications between coroutines."""
+
     def __init__(self):
         self.running = False
         self.queue = collections.deque()
 
     def add(self, coroutine):
+        """Request that a coroutine be executed."""
         self.schedule(coroutine)
 
     def run(self):
@@ -2302,8 +2411,8 @@ class Trampoline(object):
         self.running = True
         try:
             while self.running and self.queue:
-                func = self.queue.popleft()
-                return func()
+                fn = self.queue.popleft()
+                result = fn()
             return result
         finally:
             self.running = False
@@ -2311,71 +2420,30 @@ class Trampoline(object):
     def stop(self):
         self.running = False
 
-    def schedule(self, coroutine, stack=(), val=None, *exc):
+    def schedule(self, coroutine, stack=(), value=None, *exc):
         def resume():
             try:
                 if exc:
-                    value = coroutine.throw(val, *exc)
+                    value = coroutine.throw(value, *exc)
                 else:
-                    value = coroutine.send(val)
+                    value = coroutine.send(value)
             except:
                 if stack:
-                    # send the error back to the co-caller
+                    # send the error back to the "caller"
                     self.schedule(stack[0], stack[1], *sys.exc_info())
                 else:
-                    # propogate it to the real caller
                     raise
 
             if isinstance(value, types.GeneratorType):
-                # push the new coroutine and call the new one
                 self.schedule(value, (coroutine, stack))
             elif stack:
-                # got a result, pop the stack and send the result
-                # to the caller
                 self.schedule(stack[0], stack[1], value)
-            # else: this co-routine has ended
 
         self.queue.append(resume)
-
-# simple echo server giving that we have non-blocking operations
-
-# coroutine function that echos data back on a connected socket
-def echo_handler(sock):
-    while True:
-        try:
-            data = yield nonblocking_read(sock)
-            yield nonblocking_write(sock, data)
-        except ConnectionLost:
-            pass  # exit normally if connection lost
-
-# coroutine function that listens for connections on a
-# socket, and then launches a service "handler" coroutine
-# to service the connection
-def listen_on(trampoline, sock, handler):
-    while True:
-        # get the next incoming connection
-        connected_socket = yield nonblocking_accept(sock)
-
-        # start another coroutine to handle the connection
-        trampoline.add(handler(connected_socket))
-
-# Create a scheduler to manage all our coroutines
-trampoline = Trampoline()
-
-# Create a coroutine instance to run the echo_handler on
-# incoming connections
-
-# Add the coroutine to the scheduler
-trampoline.add(listen_on(trampoline,
-                         listening_socket("localhost", "echo"),
-                         echo_handler))
-
-# loop forever, accepting connections and servicing them
-trampoline.run()
 \end{pylst}
 
-\subsubsection{Генераторные выражения}
-Генераторное выражение --- выражение, которое возвращает итератор. Выглядит, как списковое включение, лишь с тем отличием, что вместо квадратных скобок используются круглые.
+\subsection{Генераторные выражения}
+\emph{Генераторное выражение} — выражение, которое возвращает генератор. Генераторное выражение является синтезом списковых включений и генераторов. От списковых включений оно отличается тем, что потребляет константный размер памяти; от генераторов отличается тем, что объект-генератор создаётся неявно, то есть без явного использования \lstinline{yield}. Генераторное выражение выглядит, как списковое включение, лишь с тем отличием, что вместо квадратных скобок используются круглые.
 \begin{pylst}{}{}
 >>> sum(i*i for i in range(10))
 285
