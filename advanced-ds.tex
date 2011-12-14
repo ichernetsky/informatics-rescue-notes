@@ -3,7 +3,18 @@
 
 \section{Красно-чёрные деревья}
 \label{sec:rb-tree}
-Красно-чёрное дерево представляет собой бинарное дерево поиска с одним дополнительным битом \emph{цвета}. Цвет узла может быть либо красным, либо чёрным. В соответствии с накладываемыми на узлы дерева ограничениями, ни один путь в красно-чёрном дереве не отличается от другого по длине более чем в два раза, что делает его сбалансированным. Вот эти ограничения:
+\emph{Красно-чёрное дерево} представляет собой бинарное дерево поиска с одним дополнительным битом \emph{цвета}. Цвет узла может быть либо красным, либо чёрным. Возможное определение типа на языке \emph{Haskell} следующее:
+\begin{hslst}{}{}
+data Color = R
+           | B
+           deriving Show
+
+data Tree e = E
+            | T Color (Tree e) e (Tree e)
+            deriving Show
+\end{hslst}
+
+В соответствии с накладываемыми на узлы дерева ограничениями, ни один путь в красно-чёрном дереве не отличается от другого по длине более чем в два раза, что делает его сбалансированным. Вот эти ограничения:
 \begin{enumerate}
   \item Корень дерева является чёрным.
   \item Красный узел может быть потомком только чёрного узла.
@@ -12,7 +23,19 @@
 \end{enumerate}
 
 \subsection{Реализация}
-При вставке нового узла в дерево может возникнуть одна из четырёх ситуаций, представленных на рисунке, когда красный узел является потомком тоже красного узла. На этом же рисунке показаны необходимые преобразования, чтобы дерево вновь стало сбалансированным.
+Определение типа уже было представлено выше. Напишем функции для создания пустого дерева и для проверки, присутствует ли элемент в дереве или нет:
+\begin{hslst}{}{}
+empty :: Tree e
+empty = E
+
+member :: Ord e => e -> Tree e -> Bool
+member x E = False
+member x (T _ a y b) | x <  y = member x a
+                     | x == y = True
+                     | x >  y = member x b
+\end{hslst}
+
+При вставке нового узла в дерево может возникнуть одна из четырёх ситуаций, представленных на рисунке~\ref{fig:rb-tree-transforms}, когда красный узел является потомком тоже красного узла. На этом же рисунке~\ref{fig:rb-tree-transforms} показаны необходимые преобразования, чтобы дерево вновь стало сбалансированным.
 
 \begin{figure}[t]
   \centering
@@ -69,9 +92,44 @@
     \draw [->,thick] (0,-7.8) -- (0,-7);
   \end{tikzpicture}
   \caption{Балансировка дерева}
+  \label{fig:rb-tree-transforms}
 \end{figure}
 
-\lstinputlisting[style=ocamlstyle,caption=Реализация красно-чёрного дерева]{src/advanced-ds/rbtree.ml}
+Для этих преобразований напишем функции \lstinline{balance}. Для всех четырёх случаев она делает преобразование необходимое, в ином случае она возвращает узел, состоящий целиком и полностью из переданных ей аргументов.
+\begin{hslst}{}{}
+balance :: Color -> Tree e -> e -> Tree e -> Tree e
+balance B (T R (T R a x b) y c) z d = T R (T B a x b) y (T B c z d)
+balance B (T R a x (T R b y c)) z d = T R (T B a x b) y (T B c z d)
+balance B a x (T R b y (T R c z d)) = T R (T B a x b) y (T B c z d)
+balance B a x (T R (T R b y c) z d) = T R (T B a x b) y (T B c z d)
+balance color a x b = T color a x b
+\end{hslst}
+
+Функция вставки \lstinline{insert} работает следующим образом: она вставляет элемент в положенное место в дереве, после чего при раскрутке стека делает преобразование, если оно необходимо, для каждого пройденного узла функцией \lstinline{balance}, после чего делает корневой узел чёрным.
+\begin{hslst}{}{}
+insert :: Ord e => e -> Tree e -> Tree e
+insert x t = makeBlack (insert' t)
+  where insert' E = T R E x E
+        insert' (T color a y b) | x <  y = balance color (insert' a) y b
+                                | x == y = T color a y b
+                                | x >  y = balance color a y (insert' b)
+        makeBlack (T _ a x b) = T B a x b
+\end{hslst}
+
+Реализуем функцию для построения дерева из элементов списка — и посмотрим, правильно ли строится дерево вышепредставленными функциями.
+\begin{hslst}{}{}
+fromList :: Ord e => [e] -> Tree e
+fromList = foldl (flip insert) E
+
+main :: IO ()
+main = do
+  putStrLn $ show $ fromList [9, 8, 7, 4, 5, 6, 3, 2, 1, 0]
+\end{hslst}
+
+После выполнения этого кода, получим в консоли:
+\begin{plainlst}{}{}
+T B (T B (T R (T B E 0 E) 1 (T B E 2 E)) 3 (T B E 4 E)) 5 (T B (T B (T R E 6 E) 7 E) 8 (T B E 9 E))
+\end{plainlst}
 
 \section{Префиксные деревья}
 \label{sec:trie}
