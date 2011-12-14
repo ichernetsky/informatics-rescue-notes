@@ -1,28 +1,19 @@
-RM = rm -f
-TOUCH = touch
-
-OCAML = ocamlc
-OFLAGS = -thread -package batteries -linkpkg
-
-PROGRAMS = trie \
-	   bloom \
-	   rbtree \
-	   btree
+apps = rbtree
 
 .PHONY: all
-all: $(PROGRAMS)
+all: $(apps)
 all: .gitignore
 
-.gitignore: $(PROGRAMS)
-	$(RM) $@
-	$(TOUCH) $@
-	for d in $(PROGRAMS); do \
+.gitignore: $(apps)
+	rm -f $@
+	touch $@
+	for d in $(apps); do \
 		echo $$d >> $@; \
 	done
 
-%: %.ml
-	ocamlfind $(OCAML) $(OFLAGS) $< -o $@
+%: %.hs
+	ghc $< -o $@
 
 .PHONY: clean
 clean:
-	$(RM) $(PROGRAMS) *.cmi *.cmo *.cmx *.o
+	rm -f $(apps) *.hi *.o
