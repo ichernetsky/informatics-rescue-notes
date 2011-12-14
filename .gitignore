@@ -10,3 +10,6 @@ _build/
 
 # Python
 *.pyc
+
+# Haskell
+*.hi
