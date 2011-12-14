@@ -91,6 +91,11 @@
   {\lstset{style=ocamlstyle,caption=#1,label=#2}}
   {}
 
+\lstdefinestyle{hsstyle}{language=Haskell,mathescape}
+\lstnewenvironment{hslst}[2]
+  {\lstset{style=hsstyle,caption=#1,label=#2}}
+  {}
+
 \lstdefinestyle{clstyle}{language=Lisp}
 \lstnewenvironment{cllst}[2]
   {\lstset{style=clstyle,caption=#1,label=#2}}
