@@ -209,7 +209,7 @@ value root : trie string char = {value=None; children=<abstr>}
 
 \section{Фильтр Блума}
 \label{sec:bloom-filter}
-Фильтр Блума (Bloom filter) — вероятностная структура данных, позволяющая компактно хранить информацию о принадлежности элемента множеству. Но при этом возможно \emph{ложноположительное сработывание}, то есть элемент в множестве не присутствует действительно, но согласно фильтру он там есть.
+\emph{Фильтр Блума} (\emph{Bloom filter}) — вероятностная структура данных, позволяющая компактно хранить информацию о принадлежности элемента множеству. Но при этом возможно \emph{ложноположительное сработывание}, то есть элемент в множестве не присутствует действительно, но согласно фильтру он там есть.
 
 Фильтр Блума может использовать любой заданный объём памяти, причём чем он больше, тем меньше вероятность ложноположительного срабатывания. Эта структура данных поддерживает операцию добавления нового элемента в множество и операцию проверки присутствия элемента в множестве. С увеличением количества хранимых элементов повышается вероятность ложноположительного срабатывания.
 
@@ -257,29 +257,54 @@ f = e^{k\ln(1 - e^{-nk / m})}.
 Производная $g$ равна нулю при $k = \ln 2 \cdot (m / n) \simeq 0.6931 \frac{m}{n}$. При этом вероятность ложноположительного срабатывания $f = (1 / 2)^k \simeq 0.6185^{m / n}$.
 
 \subsection{Реализация}
-\lstinputlisting[style=ocamlstyle]{src/advanced-ds/bloom.ml}
+\begin{pylst}{}{}
+class BloomFilter(object):
+    def __init__(self, size, hashers):
+        assert size > 0,     "size must be greater than zero"
+        assert len(hashers), "at least one hash function must be provided"
 
-\begin{ocamllst}{Пример использования}{}
-# let size = 18
-# let hasher' = Hashtbl.hash
-# let hasher'' x = abs ((Hashtbl.hash x) + (size / 2))
-# let bloom = create [hasher'; hasher''] size
-value bloom : bloom_filter '_a =
-  {hashers=[<fun>; <fun>]; bitset=<abstr>; size=18}
+        self.size    = size
+        self.hashers = tuple(hashers)
+        self.bitset  = 0L
 
-# let bloom = insert "foo" bloom ;;
-# BitSet.print stdout bloom.bitset; print_newline () ;;
-100000000100000000000000
+    def add(self, item):
+        for hasher in self.hashers:
+            position = hasher(item) % self.size
+            self.bitset |= 1 << position
 
-# let bloom = insert "bar" bloom ;;
-# BitSet.print stdout bloom.bitset; print_newline () ;;
-100100000100100000000000
+    def __contains__(self, item):
+        for hasher in self.hashers:
+            position = hasher(item) % self.size
+            if not (self.bitset & (1 << position)):
+                return False
+        return True
 
-# mem "foo" bloom ;;
-- : bool = True
-# mem "baz" bloom ;;
-- : bool = False
-\end{ocamllst}
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        binary = bin(self.bitset)
+        binary = binary[2:]
+        binary = '0' * (self.size - len(binary)) + binary
+        return binary
+\end{pylst}
+
+Ниже — пример использования фильтра Блума:
+\begin{pylst}{}{}
+>>> bf = BloomFilter(64, [hash])
+>>> bf.add(20)
+>>> bf
+0000000000000000000000000000000000000000000100000000000000000000
+>>> bf.add(34)
+>>> bf
+0000000000000000000000000000010000000000000100000000000000000000
+>>> 34 in bf
+True
+>>> 20 in bf
+True
+>>> 21 in bf
+False
+\end{pylst}
 
 \section{B-деревья}
 \label{sec:b-tree}
