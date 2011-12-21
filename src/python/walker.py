@@ -30,7 +30,7 @@ def perms(s):
                               stat.S_IXOTH]):
         if s.st_mode & flag:
             p[i] = signs[i % 3]
-            
+
     return u'permissions: %s' % u''.join(p)
 
 def ids(s):
