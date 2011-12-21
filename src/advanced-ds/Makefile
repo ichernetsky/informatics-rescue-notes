@@ -1,4 +1,5 @@
-apps = rbtree
+apps = rbtree \
+       trie
 
 .PHONY: all
 all: $(apps)

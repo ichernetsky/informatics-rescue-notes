@@ -133,7 +133,7 @@ T B (T B (T R (T B E 0 E) 1 (T B E 2 E)) 3 (T B E 4 E)) 5 (T B (T B (T R E 6 E) 
 
 \section{Префиксные деревья}
 \label{sec:trie}
-Префиксное дерево (trie) — структура данных, позволяющая хранить ассоциативный массив, ключами которого являются, как правило, строки. В отличие от двоичных деревьев поиска не обязательно хранить ключ в узлах дерева, так как в префиксном дереве по позиции узла можно вычислить ключ, ассоциированный с ним. Все потомки узла имеют общий префикс, представленный этим самым узлом.
+\emph{Префиксное дерево} (\emph{trie}) — структура данных, позволяющая хранить ассоциативный массив, ключами которого являются, как правило, строки. В отличие от двоичных деревьев поиска не обязательно хранить ключ в узлах дерева, так как в префиксном дереве по позиции узла можно вычислить ключ, ассоциированный с ним. Все потомки узла имеют общий префикс, представленный этим самым узлом.
 
 Ниже на рисунке представлено префиксное дерево с некоторыми английскими словами в качестве ключей.
 \begin{center}
@@ -183,29 +183,100 @@ T B (T B (T R (T B E 0 E) 1 (T B E 2 E)) 3 (T B E 4 E)) 5 (T B (T B (T R E 6 E) 
 
 В качестве ключей могут использоваться не только строки, но и любая последовательность. Время вставки, удаления и поиска в префиксном дереве равно $O(m)$, где $m$ — длина ключа.
 
-\lstinputlisting[style=ocamlstyle,caption=Реализация префиксного дерева]{src/advanced-ds/trie.ml}
+\subsection{Реализация}
+Для реализации нам понадобятся модули \lstinline{Data.Map}, который предоставляет реализацию словаря, и \lstinline{Data.Maybe}:
+\begin{hslst}{}{}
+import Prelude hiding (lookup, null)
 
-\begin{ocamllst}{Пример использования}{}
-# let root = empty
-# let root = insert (String.to_list "tea") "tea" root
-# let root = insert (String.to_list "ted") "ted" root
-# let root = insert (String.to_list "ten") "ten" root
-# let root = insert (String.to_list "inn") "inn" root
-# let root = insert (String.to_list "te") "te" root
-# let root = insert (String.to_list "") "" root ;;
-value root : trie string char = {value=Some ""; children=<abstr>}
+import qualified Data.Map as Map
+import qualified Data.Maybe as Maybe
+\end{hslst}
 
-# let root = remove (String.to_list "") root
-# let root = remove (String.to_list "te") root
-# let root = remove (String.to_list "inn") root
-# let root = remove (String.to_list "ten") root
-# let root = remove (String.to_list "ted") root
-# let root = remove (String.to_list "tea") root ;;
-value root : trie string char = {value=None; children=<abstr>}
+Тип префиксного дерева определим следующим образом:
+\begin{hslst}{}{}
+data Trie k v = Trie (Maybe v) (Map.Map k (Trie k v))
+                deriving Show
+\end{hslst}
 
-# Map.is_empty root.children ;;
-- : bool = True
-\end{ocamllst}
+Определим пустое дерево и функцию для проверки, пусто ли дерево или нет:
+\begin{hslst}{}{}
+empty :: Ord k => Trie k v
+empty = Trie Nothing Map.empty
+
+null :: Ord k => Trie k v -> Bool
+null (Trie Nothing children) = Map.null children
+null _                       = False
+\end{hslst}
+
+Ниже приведены функция проверки на принадлежность элемента дереву \lstinline{member} и функция поиска элемента в дереве \lstinline{lookup}.
+\begin{hslst}{}{}
+lookup :: Ord k => [k] -> Trie k v -> Maybe v
+lookup [] (Trie value _)          = value
+lookup (k : ks) (Trie _ children) = do
+  next <- Map.lookup k children
+  lookup ks next
+
+member :: Ord k => [k] -> Trie k v -> Bool
+member k = Maybe.isJust . lookup k
+\end{hslst}
+
+Функция вставки значения по ключу-последовательности \lstinline{insert}:
+\begin{hslst}{}{}
+insert :: Ord k => [k] -> v -> Trie k v -> Trie k v
+insert [] value (Trie _ children) = Trie (Just value) children
+insert (k : ks) value (Trie v children) =
+  let next = Map.findWithDefault empty k children
+      node = insert ks value next in
+  Trie v $ Map.insert k node children
+\end{hslst}
+
+Напишем функцию построения дерева из списка пар ключ-значение, и проверим, правильно ли работает наша функция вставки.
+\begin{hslst}{}{}
+fromList :: Ord k => [([k], v)] -> Trie k v
+fromList = foldl (\t (k, v) -> insert k v t) empty
+
+main :: IO ()
+main = do
+  let keys = ["tea", "ted", "ten", "inn", "te", ""]
+  let trie = fromList [ (k, True) | k <- keys ]
+  putStrLn $ show trie
+\end{hslst}
+
+После выполнения функции \lstinline{main} мы получим следующий вывод на консоль:
+\begin{plainlst}{}{}
+Trie (Just True) (fromList [('i',Trie Nothing (fromList [('n',Trie Nothing (fromList [('n',Trie (Just True) (fromList []))]))])),('t',Trie Nothing (fromList [('e',Trie (Just True) (fromList [('a',Trie (Just True) (fromList [])),('d',Trie (Just True) (fromList [])),('n',Trie (Just True) (fromList []))]))]))])
+\end{plainlst}
+
+Функция удаления элемента из дерева по ключу-последовательности может быть реализована так:
+\begin{hslst}{}{}
+delete :: Ord k => [k] -> Trie k v -> Trie k v
+delete [] (Trie _ children) = Trie Nothing children
+delete (k : ks) trie@(Trie value children) =
+  case Map.lookup k children of
+    Just next ->
+      let node = delete ks next in
+      if null node
+      then Trie value $ Map.delete k children
+      else Trie value $ Map.insert k node children
+    Nothing   -> trie
+\end{hslst}
+
+Для проверки напишем функцию, которая удаляет элементы для всех ключей из переданного списка, и проверим работоспособность функции \lstinline{delete}.
+\begin{hslst}{}{}
+deleteAll :: Ord k => [[k]] -> Trie k v -> Trie k v
+deleteAll keys trie = foldl (flip delete) trie keys
+
+main :: IO ()
+main = do
+  let keys = ["tea", "ted", "ten", "inn", "te", ""]
+  let trie = fromList [ (k, True) | k <- keys ]
+  putStrLn $ show $ deleteAll keys trie
+\end{hslst}
+
+После чего на консоль распечатается пустое дерево, как и ожидается:
+\begin{plainlst}{}{}
+Trie Nothing (fromList [])
+\end{plainlst}
 
 \section{Фильтр Блума}
 \label{sec:bloom-filter}
