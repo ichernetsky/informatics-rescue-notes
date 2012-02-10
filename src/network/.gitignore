@@ -1,8 +1,3 @@
 date-client-basic
 date-client
 date-server
-http-server-fork
-http-server-thread
-http-server-select
-http-server-poll
-http-server-epoll

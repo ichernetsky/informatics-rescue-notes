@@ -1,32 +1,21 @@
-RM = rm -f
-TOUCH = touch
-
 CFLAGS = -pedantic -Wall -Wextra -pthread
 LDFLAGS = -pthread
 
 PROGRAMS = date-client-basic \
 	   date-client \
-	   date-server \
-	   http-server-fork \
-	   http-server-thread \
-	   http-server-select \
-	   http-server-poll \
-	   http-server-epoll
+	   date-server
 
 .PHONY: all
 all: $(PROGRAMS)
 all: .gitignore
 
 .gitignore: $(PROGRAMS)
-	$(RM) $@
-	$(TOUCH) $@
-	for d in $(PROGRAMS); do \
-		echo $$d >> $@; \
+	rm -f $@
+	touch $@
+	for p in $(PROGRAMS); do \
+		echo $$p >> $@; \
 	done
-
-%: %.c netaux.c netaux.h
-	$(CC) $(CFLAGS) netaux.c $< -o $@
 
 .PHONY: clean
 clean:
-	$(RM) $(PROGRAMS) *.o
+	rm -f $(PROGRAMS) *.o *.pyc

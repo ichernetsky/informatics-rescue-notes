@@ -267,25 +267,83 @@ UDP не обеспечивает управления потоком. Быст�
 \label{sec:network-api}
 
 \subsection{Простейший DAYTIME клиент}
-Ниже приведен простейший DAYTIME клиент. В качестве аргументов командной строки должен быть указан IPv4-адрес и может быть указан номер порта.
+Ниже приведен простейший DAYTIME клиент. В качестве аргументов командной строки должены быть указаны IPv4-адрес и номер порта.
 
-\lstinputlisting[style=cstyle,caption=Простейший DAYTIME клиент,label=lst:date-client-basic]{src/network/date-client-basic.c}
+\begin{clst}{}{}
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-Ниже приведен пример запуска клиента для сервера \texttt{time.ien.it}.
+#include <error.h>
+#include <errno.h>
 
-\begin{plainlst}{Использование}{lst:basic-client-run}
-% nslookup time.ien.it
-Server:		10.6.0.6
-Address:	10.6.0.6#53
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
 
-Non-authoritative answer:
-time.ien.it	canonical name = ntp.ien.it.
-Name:	ntp.ien.it
-Address: 193.204.114.105
+#define BUFFER_SIZE    1024
 
-% date-client-basic 193.204.114.105
-20 OCT 2010 12:04:33 CEST
+int main(int argc, char *argv[])
+{
+    char *server_ip;
+    int server_port;
+    int server_socket;
+    struct sockaddr_in server_addr;
+    char buffer[BUFFER_SIZE + 1];     /* extra byte for '\0' */
+    int n, result;
+
+    if (argc != 3)
+        error(1, 0, "usage: date-client-basic <server-ip> <port>");
+
+    server_ip = argv[1];
+    server_port = atoi(argv[2]);
+    if (server_port <= 0)
+        error(1, 0, "port number must be a number > 0");
+
+    if ((server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+        (error(1, errno, "socket"));
+
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(server_port);
+
+    if ((result = inet_pton(AF_INET, server_ip, &server_addr.sin_addr)) < 0)
+        error(1, errno, "inet_pton");
+    else if (result == 0)
+        error(1, 0, "IPv4 address must be specified");
+
+    if (connect(server_socket, (struct sockaddr *) &server_addr,
+                sizeof(server_addr)) < 0)
+        error(1, errno, "connect");
+
+    while ((n = read(server_socket, buffer, BUFFER_SIZE)) > 0) {
+        buffer[n] = '\0';
+        if (printf("%s", buffer) < 0)
+            error(1, 0, "error of printing to stdout");
+    }
+
+    if (n < 0)
+        error(1, errno, "read");
+
+    if (close(server_socket) < 0)
+        error(1, errno, "close");
+
+    return 0;
+}
+\end{clst}
+
+Протестируем наш клиент. Для этого запустим локально простейший DAYTIME сервер, сколоченный из подручных средств\footnote{За значениями аргументов обращайтесь к соответствующей странице man.}:
+\begin{plainlst}{}{}
+% nc6 -l --half-close --continuous --exec date -p 45678
 \end{plainlst}
+
+Теперь запустим наш клиент:
+\begin{plainlst}{}{}
+% date-client-basic 127.0.0.1 45678
+Fri Feb  3 01:22:43 FET 2012
+\end{plainlst}
+
+Voilà! работает! Рассмотрим пристальнее функции, использованные для построения клиента.
 
 \subsubsection{Функция socket}
 Сетевой ввод/вывод начинается с вызовы функции \lstinline{socket}, передавая ей тип желаемого протокола.
@@ -294,7 +352,7 @@ Address: 193.204.114.105
 int socket(int family, int type, int protocol);
 \end{clst}
 
-Она возвращает неотрицательный дескриптор в случае успеха, -1 в случае ошибки. \lstinline{family} задает семейство протоколов.
+Она возвращает неотрицательный дескриптор в случае успеха, \lstinline{-1} в случае ошибки. \lstinline{family} задает семейство протоколов.
 \begin{table}[h!]
   \caption{Аргумент \lstinline{family} для функции \lstinline{connect}}
   \begin{center}
@@ -382,14 +440,81 @@ const char *inet_ntop(int family, const void *addr, char *str,
 \end{clst}
 
 \subsection{DAYTIME клиент, независящий от протокола}
-В качестве адреса могут быть указаны IPv4-адрес, IPv6-адрес или же доменное имя.
+В качестве адреса могут быть указаны IPv4-адрес, IPv6-адрес или же доменное имя; в качестве же порта можно указывать как численное значение, так и имя службы из файла \lstinline{/etc/services}.
 
-\lstinputlisting[style=cstyle,caption=DAYTIME клиент,label=lst:date-client]{src/network/date-client.c}
+\begin{clst}{}{}
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-Ниже приведен пример запуска клиента для сервера \texttt{time.ien.it}.
-\begin{plainlst}{Использование}{lst:client-run}
-% date-client time.ien.it
-20 OCT 2010 12:04:33 CEST
+#include <error.h>
+#include <errno.h>
+
+#include <netdb.h>
+#include <unistd.h>
+#include <sys/socket.h>
+
+#define BUFFER_SIZE    1024
+
+int main(int argc, char *argv[])
+{
+    char *server_host;
+    char *service;
+    int server_socket;
+    struct addrinfo hints, *addr, *addrs;
+    char buffer[BUFFER_SIZE + 1];     /* extra byte for '\0' */
+    int n, result;
+
+    if (argc != 3)
+        error(1, 0, "usage: date-client <server-ip> <port>");
+
+    server_host = argv[1];
+    service = argv[2];
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if ((result = getaddrinfo(server_host, service, &hints, &addrs)) != 0)
+        error(1, 0, "getaddrinfo: %s", gai_strerror(result));
+    addr = addrs;
+
+    do {
+        if ((server_socket = socket(addr->ai_family, addr->ai_socktype,
+                                    addr->ai_protocol)) < 0)
+            continue;
+
+        if (connect(server_socket, addr->ai_addr, addr->ai_addrlen) == 0)
+            break;
+
+        if (close(server_socket) != 0)
+            error(1, errno, "close");
+    } while ((addr = addr->ai_next) != NULL);
+
+    if (addr == NULL)
+        error(1, 0, "was not able to connect to specified network address and service");
+    freeaddrinfo(addrs);
+
+    while ((n = read(server_socket, buffer, BUFFER_SIZE)) > 0) {
+        buffer[n] = '\0';
+        if (printf("%s", buffer) < 0)
+            error(1, 0, "error of printing to stdout");
+    }
+
+    if (n < 0)
+        error(1, errno, "read");
+
+    if (close(server_socket) < 0)
+        error(1, errno, "close");
+
+    return 0;
+}
+\end{clst}
+
+Ниже приведен пример запуска клиента для локального DAYTIME сервера:
+\begin{plainlst}{}{}
+% date-client localhost 45678
+Fri Feb  3 02:06:13 FET 201
 \end{plainlst}
 
 \subsubsection{Функция getaddrinfo}
@@ -405,14 +530,14 @@ int getaddrinfo(const char *node, const char *service,
 Через указатель \lstinline{res} функция возвращает указатель на связный список структур \lstinline{addrinfo}.
 \begin{clst}{}{}
 struct addrinfo {
-  int              ai_flags;      /* AI_PASSIVE, AI_CANONNAME */
-  int              ai_family;     /* AF_xxx */
-  int              ai_socktype;   /* SOCK_xxx */
-  int              ai_protocol;   /* 0 or IPPROTO_xxx for IPv4 or IPv6 */
-  size_t           ai_addrlen;    /* ai_addr length */
-  struct sockaddr *ai_addr;       /* pointer to canonical name */
-  char            *ai_canonname;  /* pointer to socket address structure */
-  struct addrinfo *ai_next;       /* pointer to next structure in list */
+    int              ai_flags;      /* AI_PASSIVE, AI_CANONNAME */
+    int              ai_family;     /* AF_xxx */
+    int              ai_socktype;   /* SOCK_xxx */
+    int              ai_protocol;   /* 0 or IPPROTO_xxx for IPv4 or IPv6 */
+    size_t           ai_addrlen;    /* ai_addr length */
+    struct sockaddr *ai_addr;       /* pointer to canonical name */
+    char            *ai_canonname;  /* pointer to socket address structure */
+    struct addrinfo *ai_next;       /* pointer to next structure in list */
 };
 \end{clst}
 
@@ -435,7 +560,110 @@ struct addrinfo {
 \subsection{Последовательный DAYTIME сервер}
 В качестве аргументов командной строки может быть указан номер порта для прослушивания.
 
-\lstinputlisting[style=cstyle,caption=DAYTIME сервер,label=lst:date-server]{src/network/date-server.c}
+\begin{clst}{}{}
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <error.h>
+#include <errno.h>
+
+#include <netdb.h>
+#include <unistd.h>
+#include <sys/socket.h>
+
+#include <time.h>
+
+#define BUFFER_SIZE    1024
+#define BACKLOG        5
+
+int main(int argc, char *argv[])
+{
+    int listen_socket, client_socket;
+    socklen_t socket_length;
+    char *service;
+    struct addrinfo hints, *addr, *addrs;
+    struct sockaddr_storage client_addr;
+    char buffer[BUFFER_SIZE + 1];     /* extra byte for '\0' */
+    time_t ticks;
+    int result;
+    const int on = 1;
+
+    if (argc != 2)
+        error(1, 0, "usage: echo-client-basic <port>");
+
+    service = argv[1];
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_flags = AI_PASSIVE;
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if ((result = getaddrinfo(NULL, service, &hints, &addrs)) != 0)
+        error(1, 0, "getaddrinfo: %s", gai_strerror(result));
+    addr = addrs;
+
+    do {
+        if ((listen_socket = socket(addr->ai_family, addr->ai_socktype,
+                                    addr->ai_protocol)) < 0)
+            continue;
+
+        if (setsockopt(listen_socket, SOL_SOCKET, SO_REUSEADDR,
+                       &on, sizeof(on)) != 0)
+            error(1, errno, "setsockopt");
+
+        if (bind(listen_socket, addr->ai_addr, addr->ai_addrlen) == 0)
+            break;
+
+        if (close(listen_socket) != 0)
+            error(1, errno, "close");
+    } while ((addr = addr->ai_next) != NULL);
+
+    if (addr == NULL)
+        error(1, 0, "was not able to bind to specified network address and service");
+    freeaddrinfo(addrs);
+
+    if (listen(listen_socket, BACKLOG) != 0)
+        error(1, errno, "listen");
+
+    for (;;) {
+        socket_length = sizeof(client_addr);
+        if ((client_socket = accept(listen_socket,
+                                    (struct sockaddr *) &client_socket,
+                                    &socket_length)) < 0)
+            error(1, errno, "accept");
+
+        ticks = time(NULL);
+        snprintf(buffer, sizeof(buffer), "%.24s\r\n", ctime(&ticks));
+        if (write(client_socket, buffer, strlen(buffer)) < 0)
+            error(1, errno, "write");
+        /*
+         *   ignoring the fact that write can write less bytes
+         *   than specified
+         */
+
+        if (close(client_socket) < 0)
+            error(1, errno, "close");
+    }
+
+    if (close(listen_socket) < 0)
+        error(1, errno, "close");
+
+    return 0;
+}
+\end{clst}
+
+По умолчанию нельзя связывать сокет с портом, который только что использовался, так как сетевая подсистема ядра ожидает ещё пакеты предыдущего соединения, которые могли задержаться в сети. Время ожидания равно TIME\_WAIT. С помощью вызова \lstinline{setsockopt} мы преодолеваем это поведение.
+
+Проверим наш сервер:
+\begin{plainlst}{}{}
+% date-server 45678
+# in another shell
+% nc6 localhost 45678
+Fri Feb  3 07:37:05 2012
+\end{plainlst}
+
+Как и ожидалось: работает!
 
 \subsubsection{Функция bind}
 Функция \lstinline{bind} связывает сокет с локальным адресом протокола, комбинацией адреса IP с номером порта.
@@ -453,7 +681,7 @@ int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 В случае IPv4 универсальный адрес состоящий из символов подстановки, задается константой \lstinline{INADDR_ANY}.
 \begin{clst}{}{}
 struct sockaddr_in addr;
-servaddr.sin_addr.s_addr = htonl (INADDR_ANY);
+servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 \end{clst}
 
 \subsubsection{Функция listen}
@@ -515,8 +743,8 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 Последний аргумент, который сообщает ядру, сколько следует ждать, пока один из заданных дескрипторов не будет готов. Структура \lstinline{timeval} задает число секунд и микросекунд:
 \begin{clst}{}{}
 struct timeval {
-  long tv_sec;   /* seconds */
-  long tv_usec;  /* microseconds */
+    long tv_sec;   /* seconds */
+    long tv_usec;  /* microseconds */
 };
 \end{clst}
 
@@ -529,10 +757,11 @@ struct timeval {
 
 Три аргумента \lstinline{readfds}, \lstinline{writefds} и \lstinline{exceptfds} определяют наборы дескрипторов, которые ядро должно проверить на возможность чтения и записи и на наличие исключений. Манипулировать ими нужно с помощью предопределенных макросов:
 \begin{clst}{}{}
-void FD_ZERO (fd_set *fds);           /* clears a set*/
-void FD_SET (int fd, fd_set *fds);    /* add a descriptor to a set */
-void FD_CLR (int fd, fd_set *fds);    /* remove a descriptor from a set */
-int FD_ISSET (int fd, fd_set *fds);   /* tests whether a descriptor is part of a set */
+void FD_ZERO(fd_set *fds);           /* clears a set*/
+void FD_SET(int fd, fd_set *fds);    /* add a descriptor to a set */
+void FD_CLR(int fd, fd_set *fds);    /* remove a descriptor from a set */
+int  FD_ISSET(int fd, fd_set *fds);  /* tests whether a descriptor is
+                                        part of a set */
 \end{clst}
 
 Константа \lstinline{FD_SETSIZE} является максимальным числом дескрипторов для типа данных \lstinline{fd_set}.
@@ -576,15 +805,15 @@ int FD_ISSET (int fd, fd_set *fds);   /* tests whether a descriptor is part of a
 Функция \lstinline{poll} аналогична функции \lstinline{select}.
 \begin{clst}{}{}
 #include <poll.h>
-int poll (struct pollfd *fds, nfds_t nfds, int timeout);
+int poll(struct pollfd *fds, nfds_t nfds, int timeout);
 \end{clst}
 
 Первый аргумент --- это указатель на первый элемент массива структур. Каждый элемент массива --- это структура \lstinline{pollfd}, задающая условия, проверяемые для данного дескриптора \lstinline{fd}.
 \begin{clst}{}{}
 struct pollfd {
-  int   fd;         /* file descriptor */
-  short events;     /* requested events */
-  short revents;    /* returned events */
+    int   fd;         /* file descriptor */
+    short events;     /* requested events */
+    short revents;    /* returned events */
 };
 \end{clst}
 
@@ -624,18 +853,18 @@ struct pollfd {
 \end{table}
 
 \subsubsection{epoll}
-\emph{epoll} --- масштабируемая система уведомлений о произошедших событиях, которая появилась в Linux 2.5.44. Более эффективна, чем системные вызовы \lstinline{select} и \lstinline{poll}. Аналог \emph{kqueue} в FreeBSD.
+\emph{epoll} — масштабируемая система уведомлений о произошедших событиях, которая появилась в Linux 2.5.44. Более эффективна, чем системные вызовы \lstinline{select} и \lstinline{poll}. Аналог \emph{kqueue} в FreeBSD.
 
 \begin{clst}{}{}
 #include <sys/epoll.h>
-int epoll_create (int size);
+int epoll_create(int size);
 \end{clst}
 
-Функция \lstinline{epoll_create} создает epoll-экземпляр и возвращает файловый дескриптор, соответствующий этому экземпляру. Аргумент \lstinline{size} в текущей реализации не используется, достаточно чтобы он был не меньше нуля. Когда дескриптор больше не нужен, его слудует закрыть вызовом функции \lstinline{close}.
+Функция \lstinline{epoll_create} создает epoll-экземпляр и возвращает файловый дескриптор, соответствующий этому экземпляру. Аргумент \lstinline{size} в текущей реализации не используется, достаточно чтобы он был не меньше нуля. Когда дескриптор больше не нужен, его следует закрыть вызовом функции \lstinline{close}.
 
 \begin{clst}{}{}
 #include <sys/epoll.h>
-int epoll_ctl (int epfd, int op, int fd, struct epoll_event *event);
+int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
 \end{clst}
 
 Этот системный вызов выполняет операции над epoll-экземпляром, на который ссылается файловый дескриптор \lstinline{epfd}. Допустимые значения \lstinline{op}:
@@ -648,19 +877,19 @@ int epoll_ctl (int epfd, int op, int fd, struct epoll_event *event);
 Структура \lstinline{epoll_event} выглядит следующим образом:
 \begin{clst}{}{}
 typedef union epoll_data {
-  void        *ptr;
-  int          fd;
-  __uint32_t   u32;
-  __uint64_t   u64;
+    void        *ptr;
+    int          fd;
+    __uint32_t   u32;
+    __uint64_t   u64;
 } epoll_data_t;
 
 struct epoll_event {
-  __uint32_t   events;      /* epoll events */
-  epoll_data_t data;        /* user data variable */
+    __uint32_t   events;      /* epoll events */
+    epoll_data_t data;        /* user data variable */
 };
 \end{clst}
 
-\lstinline{events} --- битовая карта, состоящая из следующих значений:
+\lstinline{events} — битовая карта, состоящая из следующих значений:
 \begin{itemize}
   \item \lstinline{EPOLLIN}. Можно читать данные.
   \item \lstinline{EPOLLOUT}. Можно записывать данные.
@@ -696,42 +925,354 @@ int epoll_wait(int epfd, struct epoll_event *events,
 \subsubsection{По процессу на клиента}
 Сервер порождает процесс для каждого клиента.
 \begin{itemize}
-  \item[\textbf{+}] Простейшая и наиболее быстрая реализация среди всех здесь описываемых, особенно если использовать inetd.
-  \item[\textbf{+}] Масштабируется с ростом числа процессоров.
-  \item[\textbf{+}] Ошибки в одном процессе не приводят к отказу в обслуживании остальных клиентов.
-  \item[\textbf{--}] Создание процесса -- довольно ресурсоёмкая операция, поэтому метод неприменим при большом количестве одновременно работающих клиентов.
-  \item[\textbf{--}] Несмотря на масштабируемость, модель тяжела и в среднем гораздо менее эффективна, чем другие.
+  \item[\Checkmark] Простейшая и наиболее быстрая реализация среди всех здесь описываемых, особенно если использовать inetd.
+  \item[\Checkmark] Масштабируется с ростом числа процессоров.
+  \item[\Checkmark] Ошибки в одном процессе не приводят к отказу в обслуживании остальных клиентов.
+  \item[\XSolidBrush] Создание процесса -- довольно ресурсоёмкая операция, поэтому метод неприменим при большом количестве одновременно работающих клиентов.
+  \item[\XSolidBrush] Несмотря на масштабируемость, модель тяжела и в среднем гораздо менее эффективна, чем другие.
 \end{itemize}
+
+Запрограммируем эту модель обработки на \emph{Python}. Здесь и далее мы будем использовать низкоуровневые функции для лучшего понимания происходящего, в практике же, как правило, следует использовать стандартную и иные библиотеки для сетевого ввода/вывода.
+
+Реализовывать мы будет простой \emph{echo}-сервер, который отправляет клиенту все полученные данные от него. Сперва-наперво напишем функцию разбора аргументов:
+\begin{pylst}{}{}
+import argparse
+
+def parse_args(description):
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('port', type=int, help='port to bind')
+    return parser.parse_args()
+\end{pylst}
+
+Следом — функция, которая создаёт пассивный сокет, на который будут приниматся соединения клиентов:
+\begin{pylst}{}{}
+import socket
+import sys
+
+def listening_socket(port):
+    host = None
+    family = socket.AF_UNSPEC
+    socket_type = socket.SOCK_STREAM
+    protocol = 0
+    flags = socket.AI_PASSIVE
+
+    server_socket = None
+    for addrinfo in socket.getaddrinfo(host, port, family, socket_type,
+                                       protocol, flags):
+        family, socket_type, protocol, canonical_name, addr = addrinfo
+
+        try:
+            server_socket = socket.socket(family, socket_type, protocol)
+        except socket.error, msg:
+            server_socket = None
+            continue
+
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            server_socket.bind(addr)
+            server_socket.listen(1)
+        except socket.error, msg:
+            server_socket.close()
+            server_socket = None
+            continue
+
+        break
+
+    if server_socket is None:
+        print 'could not open socket'
+        sys.exit(1)
+
+    return server_socket
+\end{pylst}
+
+И напоследок: функция, которая считывает по порциям данные из сокета и вновь их отправляет обратно по этому же сокету клиенту.
+\begin{pylst}{}{}
+def communicate(client_socket):
+    while True:
+        data = client_socket.recv(1024)
+        if not data:
+            break
+        client_socket.sendall(data)
+\end{pylst}
+
+Поместим все три функции в отдельный модуль \lstinline{aux}. Тогда наш сервер будет выглядеть так:
+\begin{pylst}{}{}
+import os
+import signal
+
+import aux
+
+def main():
+    args = aux.parse_args('Echo server with fork processing model.')
+    server_socket = aux.listening_socket(args.port)
+
+    signal.signal(signal.SIGCHLD, signal.SIG_IGN)
+
+    while True:
+        client_socket, client_addr = server_socket.accept()
+
+        if os.fork() == 0:
+            server_socket.close()
+            aux.communicate(client_socket)
+            client_socket.close()
+            return
+        else:
+            client_socket.close()
+
+if __name__ == '__main__':
+    main()
+\end{pylst}
+
+При реализации \emph{fork}-модели следует помнить, что нужно корректно обрабатывать завершение потомков, чтобы они не переходили в состояние зомби по окончании работы с сокетом. Это достигается двумя способами:
+\begin{enumerate}
+  \item явное игнорирование сигнала \lstinline{SIGCHLD}, который посылается родителю при завершении каждого потомка (имеено так мы и сделали в вышеприведённой реализации);
+  \item установка обработчика для сигнала \lstinline{SIGCHLD}, который выполняет, например, \lstinline{os.waitpid(-1, os.WNOHANG)}.
+\end{enumerate}
 
 \subsubsection{FSM с использованием информации о состоянии сокета}
 Сервер может использовать однопроцессную \textbf{FSM} (Finite State Machine) архитектуру, используя те или иные методы получения данных о состоянии сокетов (\lstinline{select}, \lstinline{poll} и т.п.).
 \begin{itemize}
-  \item[\textbf{+}] Эффективный метод с точки зрения CPU.
-  \item[\textbf{--}] Не масштабируется с ростом числа процессоров.
-  \item[\textbf{--}] Серверные FSM, как правило, достаточно сложны и требуют тщательного подхода при проектировании.
-  \item[\textbf{+}] Имея готовую реализацию, написание сервера на FSM значительно упрощается.
-  \item[\textbf{--}] Блокирующие либо иначе продолжительные по времени операции недопустимы.
+  \item[\Checkmark] Эффективный метод с точки зрения CPU.
+  \item[\XSolidBrush] Не масштабируется с ростом числа процессоров.
+  \item[\XSolidBrush] Серверные FSM, как правило, достаточно сложны и требуют тщательного подхода при проектировании.
+  \item[\Checkmark] Имея готовую реализацию, написание сервера на FSM значительно упрощается.
+  \item[\XSolidBrush] Блокирующие либо иначе продолжительные по времени операции недопустимы.
 \end{itemize}
 
 Проблему с длительными операциями можно решить, используя для их выполнения вспомогательные процессы или потоки.
 
+\begin{pylst}{Реализация с использованием \lstinline{select}}{}
+import select
+
+import aux
+
+def main():
+    args = aux.parse_args('Echo server with select-processing model.')
+    server_socket = aux.listening_socket(args.port)
+
+    socket_to_data = {}
+    client_sockets = []
+    all_sockets = [server_socket]
+
+    while True:
+        readable, _, _ = select.select(all_sockets, [], [], 0.05)
+
+        if server_socket in readable:
+            client_socket, _ = server_socket.accept()
+
+            socket_to_data[client_socket] = ''
+            client_sockets.append(client_socket)
+            all_sockets.append(client_socket)
+
+            readable.remove(server_socket)
+
+        for client_socket in readable:
+            data = client_socket.recv(1024)
+            if not data:
+                del socket_to_data[client_socket]
+                client_sockets.remove(client_socket)
+                all_sockets.remove(client_socket)
+                client_socket.close()
+            else:
+                socket_to_data[client_socket] += data
+
+        check_writability = [cs for cs in client_sockets
+                             if socket_to_data[cs]]
+
+        _, writable, _ = select.select([], check_writability, [], 0.05)
+
+        for client_socket in writable:
+            data = socket_to_data[client_socket]
+            n = client_socket.send(data)
+            if n > 0:
+                socket_to_data[client_socket] = data[n:]
+
+if __name__ == '__main__':
+    main()
+\end{pylst}
+
+\begin{pylst}{Реализация с использованием \lstinline{poll}}{}
+import select
+
+import aux
+
+def main():
+    args = aux.parse_args('Echo server with poll-processing model.')
+    server_socket = aux.listening_socket(args.port)
+    server_fileno = server_socket.fileno()
+
+    fileno_to_data = {}
+    fileno_to_socket = {}
+
+    read_poll = select.poll()
+    read_poll.register(server_fileno, select.POLLIN)
+
+    while True:
+        for fileno, eventmask in read_poll.poll(50):
+            if fileno == server_fileno:
+                client_socket, _ = server_socket.accept()
+                client_fileno = client_socket.fileno()
+
+                fileno_to_data[client_fileno] = ''
+                fileno_to_socket[client_fileno] = client_socket
+
+                read_poll.register(client_fileno, select.POLLIN)
+            else:
+                client_socket = fileno_to_socket[fileno]
+
+                data = client_socket.recv(1024)
+                if not data:
+                    read_poll.unregister(fileno)
+                    del fileno_to_data[fileno]
+                    del fileno_to_socket[fileno]
+                    client_socket.close()
+                else:
+                    fileno_to_data[fileno] += data
+
+        check_writability = [f for f, d in fileno_to_data.iteritems() if d]
+        if not check_writability:
+            continue
+
+        write_poll = select.poll()
+        for fileno in check_writability:
+            write_poll.register(fileno, select.POLLOUT)
+
+        for fileno, eventmask in write_poll.poll(50):
+            if eventmask & (select.POLLERR | select.POLLHUP):
+                read_poll.unregister(fileno)
+                fileno_to_socket[fileno].close()
+                del fileno_to_data[fileno]
+                del fileno_to_socket[fileno]
+                continue
+
+            client_socket = fileno_to_socket[fileno]
+            data = fileno_to_data[fileno]
+
+            n = client_socket.send(data)
+            if n > 0:
+                fileno_to_data[fileno] = data[n:]
+
+if __name__ == '__main__':
+    main()
+\end{pylst}
+
+С помощью таймаутов при вызове \lstinline{select} и \lstinline{poll} нагрузка на CPU существенно снижается.
+
 \subsubsection{По потоку на клиента}
-Сервер --- процесс, использующий потоки для взаимодействия с клиентами.
+Сервер — процесс, использующий потоки для взаимодействия с клиентами.
 \begin{itemize}
-  \item[\textbf{+}] Небольшая сложность разработки.
-  \item[\textbf{+}] Масштабируется с ростом числа процессоров.
-  \item[\textbf{--}] Требуется проработка механизмов защиты общих данных.
-  \item[\textbf{--}] Трудная отладка в сравнении с процессами.
+  \item[\Checkmark] Небольшая сложность разработки.
+  \item[\Checkmark] Масштабируется с ростом числа процессоров.
+  \item[\XSolidBrush] Требуется проработка механизмов защиты общих данных.
+  \item[\XSolidBrush] Трудная отладка в сравнении с процессами.
 \end{itemize}
 
-\subsubsection{FSM c использований событий}
+Естественно, следом идёт наша реализация этой модели. Как видно, отличий от реализации \emph{fork}-модели не так уж и много.
+\begin{pylst}{}{}
+import threading
+
+import aux
+
+class Worker(threading.Thread):
+    def __init__(self, client_socket):
+        super(Worker, self).__init__()
+
+        self.client_socket = client_socket
+        self.daemon = True
+
+    def run(self):
+        aux.communicate(self.client_socket)
+        self.client_socket.close()
+
+def main():
+    args = aux.parse_args('Echo server with threaded-processing model.')
+    server_socket = aux.listening_socket(args.port)
+
+    while True:
+        client_socket, client_addr = server_socket.accept()
+
+        worker = Worker(client_socket)
+        worker.start()
+
+if __name__ == '__main__':
+    main()
+\end{pylst}
+
+\subsubsection{FSM c использованием событий}
 \begin{itemize}
-  \item[\textbf{+}] Из-за модели передачи событий вместо передачи состояний очень эффективен при обслуживании очень большого количества клиентов, только часть из которых активна. Состояния неактивных сокетов не вызывают расхода ресурсов.
-  \item[\textbf{+}] Не имеет ограничений на максимальное количество обслуживаемых сокетов.
-  \item[\textbf{--}] Все еще FSM.
+  \item[\Checkmark] Из-за модели передачи событий вместо передачи состояний очень эффективен при обслуживании очень большого количества клиентов, только часть из которых активна. Состояния неактивных сокетов не вызывают расхода ресурсов.
+  \item[\Checkmark] Не имеет ограничений на максимальное количество обслуживаемых сокетов.
+  \item[\XSolidBrush] Все еще FSM.
 \end{itemize}
 
 На Linux для этой модели следует использовать \emph{epoll}.
+
+\begin{pylst}{Реализация с использованием \lstinline{epoll}}{}
+import select
+
+import aux
+
+def main():
+    args = aux.parse_args('Echo server with epoll-processing model.')
+    server_socket = aux.listening_socket(args.port)
+    server_fileno = server_socket.fileno()
+
+    fileno_to_data = {}
+    fileno_to_socket = {}
+
+    read_epoll = select.epoll()
+    read_epoll.register(server_fileno, select.EPOLLIN)
+
+    while True:
+        for fileno, eventmask in read_epoll.poll(0.05):
+            if fileno == server_fileno:
+                client_socket, _ = server_socket.accept()
+                client_fileno = client_socket.fileno()
+
+                fileno_to_data[client_fileno] = ''
+                fileno_to_socket[client_fileno] = client_socket
+
+                read_epoll.register(client_fileno, select.EPOLLIN)
+            else:
+                client_socket = fileno_to_socket[fileno]
+
+                data = client_socket.recv(1024)
+                if not data:
+                    read_epoll.unregister(fileno)
+                    del fileno_to_data[fileno]
+                    del fileno_to_socket[fileno]
+                    client_socket.close()
+                else:
+                    fileno_to_data[fileno] += data
+
+        check_writability = [f for f, d in fileno_to_data.iteritems() if d]
+        if not check_writability:
+            continue
+
+        write_epoll = select.epoll()
+        for fileno in check_writability:
+            write_epoll.register(fileno, select.EPOLLOUT)
+
+        for fileno, eventmask in write_epoll.poll(0.05):
+            if eventmask & (select.EPOLLERR | select.EPOLLHUP):
+                read_epoll.unregister(fileno)
+                fileno_to_socket[fileno].close()
+                del fileno_to_data[fileno]
+                del fileno_to_socket[fileno]
+                continue
+
+            client_socket = fileno_to_socket[fileno]
+            data = fileno_to_data[fileno]
+
+            n = client_socket.send(data)
+            if n > 0:
+                fileno_to_data[fileno] = data[n:]
+
+        write_epoll.close()
+
+if __name__ == '__main__':
+    main()
+\end{pylst}
 
 \section{Организация сетей и адресация}
 \label{sec:network-setup}
@@ -991,7 +1532,7 @@ Destination   Gateway    Genmask         Flags   MSS Window  irtt Iface
 Позволяет устанавливать соединения TCP и UDP, принимать данные и передавать их, сканировать порты. Аналог широкоизвестной утилиты cat для сетевого вводы/вывода.
 
 \subsubsection{tcpdump}
-Позволяет перехватывать и анализировать сетевой трафик. Для выполнения требует прав суперпользователя и прямой доступ к устройтсву.
+Позволяет перехватывать и анализировать сетевой трафик. Для выполнения требует прав суперпользователя и прямой доступ к устройству.
 
 \begin{plainlst}{Типичный вывод tcpdump}{}
 % tcpdump -i lo

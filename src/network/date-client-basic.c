@@ -1,42 +1,60 @@
-#include "netaux.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-int main (int argc, char *argv[]) {
-  int peer, n, ret;
-  uint16_t port = 13;
-  char line[MAX_LINE + 1];
-  struct sockaddr_in peer_addr;
+#include <error.h>
+#include <errno.h>
 
-  if (argc != 2 && argc != 3) {
-    fprintf (stderr, "usage: %s <address>[ <port>]\n", argv[0]);
-    exit (1);
-  }
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
 
-  if (argc == 3)
-    port = (uint16_t) atoi (argv[2]);
+#define BUFFER_SIZE    1024
 
-  if ((peer = socket (AF_INET, SOCK_STREAM, 0)) < 0)
-    err_quit ("socket");
+int main(int argc, char *argv[])
+{
+    char *server_ip;
+    int server_port;
+    int server_socket;
+    struct sockaddr_in server_addr;
+    char buffer[BUFFER_SIZE + 1];     /* extra byte for '\0' */
+    int n, result;
 
-  bzero (&peer_addr, sizeof (peer_addr));
-  peer_addr.sin_family = AF_INET;
-  peer_addr.sin_port = htons (port);
-  if ((ret = inet_pton (AF_INET, argv[1], &peer_addr.sin_addr)) < 0)
-    err_quit ("inet_pton");
-  else if (ret == 0) {
-    fprintf (stderr, "IPv4 address must be specified\n");
-    exit (1);
-  }
+    if (argc != 3)
+        error(1, 0, "usage: date-client-basic <server-ip> <port>");
 
-  if (connect (peer, (struct sockaddr *) &peer_addr, sizeof (peer_addr)) < 0)
-    err_quit ("connect");
+    server_ip = argv[1];
+    server_port = atoi(argv[2]);
+    if (server_port <= 0)
+        error(1, 0, "port number must be a number > 0");
 
-  while ((n = read (peer, line, MAX_LINE)) > 0) {
-    line[n] = 0;
-    if (printf ("%s", line) < 0)
-      err_quit ("printf");
-  }
-  if (n < 0)
-    err_quit ("read");
+    if ((server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+        (error(1, errno, "socket"));
 
-  return EXIT_SUCCESS;
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(server_port);
+
+    if ((result = inet_pton(AF_INET, server_ip, &server_addr.sin_addr)) < 0)
+        error(1, errno, "inet_pton");
+    else if (result == 0)
+        error(1, 0, "IPv4 address must be specified");
+
+    if (connect(server_socket, (struct sockaddr *) &server_addr,
+                sizeof(server_addr)) < 0)
+        error(1, errno, "connect");
+
+    while ((n = read(server_socket, buffer, BUFFER_SIZE)) > 0) {
+        buffer[n] = '\0';
+        if (printf("%s", buffer) < 0)
+            error(1, 0, "error of printing to stdout");
+    }
+
+    if (n < 0)
+        error(1, errno, "read");
+
+    if (close(server_socket) < 0)
+        error(1, errno, "close");
+
+    return 0;
 }
